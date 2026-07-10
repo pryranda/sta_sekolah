@@ -1,0 +1,45 @@
+name: sekolah_app
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.12.2'
+  
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # ✅ Flutter Localization (WAJIB untuk format tanggal bahasa Indonesia)
+  flutter_localizations:
+    sdk: flutter
+  
+  # ✅ Internationalization (versi disesuaikan dengan flutter_localizations)
+  intl: ^0.20.2  # ← DITURUNKAN dari ^0.20.3
+  
+  # Network & Storage
+  http: ^1.1.0
+  shared_preferences: ^2.2.2
+  
+  # Maps & Location
+  flutter_map: 5.0.0
+  latlong2: 0.9.0
+  geolocator: ^11.0.0
+  
+  # State Management & Utils
+  provider: ^6.1.1
+  jwt_decoder: ^2.0.1
+  fluttertoast: ^9.1.0
+  cupertino_icons: ^1.0.6
+  #file_picker: ^11.0.2
+  file_picker: ^8.0.0
+  image_picker: ^1.0.4
+  path: ^1.8.3    
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
