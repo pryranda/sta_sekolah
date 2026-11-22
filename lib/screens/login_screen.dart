@@ -28,32 +28,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // ✅ Color Palette - Hijau Profesional
   static const Color primaryGreen = Color(0xFF7BC8A4);
-  static const Color lightGreen = Color(0xFFB8F0D8);
-  static const Color darkGreen = Color(0xFF2D5A4A);        // ✅ Hijau Tua Profesional
-  static const Color darkerGreen = Color(0xFF1A3D32);      // ✅ Hijau Sangat Gelap
-  static const Color accentGreen = Color(0xFF4A9E7A);
+  static const Color darkGreen = Color(0xFF2D5A4A);
+  static const Color darkerGreen = Color(0xFF1A3D32);
   static const Color softWhite = Color(0xFFF8F9FA);
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    
     _animationController.forward();
     _loadSavedCredentials();
+    // TIDAK ADA panggil loadSchoolProfile di sini
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -80,51 +75,44 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
       if (result['success'] == true) {
         final prefs = await SharedPreferences.getInstance();
-        
+
         await prefs.setString('token', result['data']['token']);
         await prefs.setString('user', jsonEncode(result['data']['user']));
-        
+
         if (_rememberMe) {
           await prefs.setString('remembered_username', _usernameController.text.trim());
         } else {
           await prefs.remove('remembered_username');
         }
 
+        // Hapus cache sekolah agar data baru diambil
+        await prefs.remove('school_info');
+
+        // 🔥 Ambil data sekolah SETELAH login (token & user tersimpan)
+        await context.read<SchoolProvider>().loadSchoolProfile(forceReload: true);
+
         final user = result['data']['user'];
         final userRole = (user['role'] ?? user['role_name'] ?? '').toString().toLowerCase();
-        
-        final roleId = user['role_id'];
-        final roleIdInt = roleId is int ? roleId : int.tryParse(roleId.toString()) ?? 0;
-        
-        debugPrint('👤 Login berhasil: ${user['username']}');
-        debugPrint('🔑 Role: $userRole (ID: $roleIdInt)');
-        debugPrint('🏫 Sekolah ID: ${user['sekolah_id']}');
-        
+
         Widget targetScreen;
-        
         switch (userRole) {
           case 'siswa':
-            debugPrint('➡️ Navigate ke StudentDashboardScreen');
             targetScreen = const StudentDashboardScreen();
             break;
           case 'orang_tua':
-            debugPrint('➡️ Navigate ke ParentDashboardScreen');
             targetScreen = const ParentDashboardScreen();
             break;
           case 'guru':
-            debugPrint('➡️ Navigate ke TeacherDashboardScreen');
             targetScreen = const TeacherDashboardScreen();
             break;
           case 'admin':
           case 'administrator':
-            debugPrint('➡️ Navigate ke AdminDashboardScreen');
             targetScreen = const AdminDashboardScreen();
             break;
           default:
-            debugPrint('⚠️ Role tidak dikenali: $userRole, redirect ke HomeScreen');
             targetScreen = const HomeScreen();
         }
-        
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -156,9 +144,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -189,25 +175,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         child: SafeArea(
           child: Stack(
             children: [
-              // Decorative Circles
+              // Dekorasi lingkaran
               Positioned(
-                top: -80,
-                right: -80,
+                top: -60,
+                right: -60,
                 child: Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.4),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 50,
-                left: -100,
-                child: Container(
-                  width: 300,
-                  height: 300,
+                  width: 180,
+                  height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.3),
@@ -215,145 +189,134 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
               Positioned(
-                top: 250,
-                right: -50,
+                bottom: 30,
+                left: -70,
                 child: Container(
-                  width: 180,
-                  height: 180,
+                  width: 200,
+                  height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: darkerGreen.withOpacity(0.08),
+                    color: Colors.white.withOpacity(0.2),
                   ),
                 ),
               ),
               Positioned(
-                top: 100,
-                left: -60,
+                top: 200,
+                right: -30,
                 child: Container(
-                  width: 150,
-                  height: 150,
+                  width: 120,
+                  height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: primaryGreen.withOpacity(0.3),
+                    color: darkerGreen.withOpacity(0.06),
                   ),
                 ),
               ),
-              
-              // Decorative Leaf Pattern
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Opacity(
-                  opacity: 0.15,
-                  child: Icon(
-                    Icons.eco,
-                    size: 120,
-                    color: darkerGreen,
-                  ),
-                ),
-              ),
-              
-              // Main Content
-              Center(
+
+              Align(
+                alignment: Alignment.topCenter,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.only(top: 40, left: 24, right: 24, bottom: 24),
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: SlideTransition(
                       position: _slideAnimation,
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Logo & Branding
+                          // ==========================================
+                          // LOGO & NAMA SEKOLAH (HANYA PLACEHOLDER)
+                          // ==========================================
                           Consumer<SchoolProvider>(
                             builder: (context, schoolProvider, child) {
-                              return Container(
-                                padding: const EdgeInsets.all(22),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: primaryGreen, width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: darkerGreen.withOpacity(0.15),
-                                      blurRadius: 20,
-                                      spreadRadius: 3,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                    BoxShadow(
-                                      color: primaryGreen.withOpacity(0.3),
-                                      blurRadius: 30,
-                                      spreadRadius: 5,
-                                    ),
-                                  ],
-                                ),
-                                child: schoolProvider.logoUrl.isNotEmpty
-                                    ? ClipOval(
-                                        child: Image.network(
-                                          schoolProvider.logoUrl,
-                                          width: 75,
-                                          height: 75,
-                                          fit: BoxFit.cover,
-                                          loadingBuilder: (context, child, loadingProgress) {
-                                            if (loadingProgress == null) return child;
-                                            return const SizedBox(
-                                              width: 75,
-                                              height: 75,
-                                              child: Center(
-                                                child: CircularProgressIndicator(
-                                                  color: primaryGreen,
-                                                  strokeWidth: 2,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return const Icon(
-                                              Icons.school_rounded,
-                                              size: 75,
-                                              color: primaryGreen,
-                                            );
-                                          },
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.school_rounded,
-                                        size: 75,
-                                        color: primaryGreen,
-                                      ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 25),
-                          
-                          // School Name
-                          Consumer<SchoolProvider>(
-                            builder: (context, schoolProvider, child) {
+                              final isLoading = schoolProvider.isLoading;
+                              final logo = schoolProvider.logoUrl;
+                              final nama = schoolProvider.namaSekolah;
+
                               return Column(
                                 children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: primaryGreen, width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: darkerGreen.withOpacity(0.12),
+                                          blurRadius: 15,
+                                          spreadRadius: 2,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: isLoading
+                                        ? const SizedBox(
+                                            width: 50,
+                                            height: 50,
+                                            child: CircularProgressIndicator(
+                                              color: primaryGreen,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : (logo.isNotEmpty
+                                            ? ClipOval(
+                                                child: Image.network(
+                                                  logo,
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (context, child, loadingProgress) {
+                                                    if (loadingProgress == null) return child;
+                                                    return const SizedBox(
+                                                      width: 50,
+                                                      height: 50,
+                                                      child: Center(
+                                                        child: CircularProgressIndicator(
+                                                          color: primaryGreen,
+                                                          strokeWidth: 2,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  errorBuilder: (context, error, stackTrace) =>
+                                                      const Icon(
+                                                    Icons.school_rounded,
+                                                    size: 50,
+                                                    color: primaryGreen,
+                                                  ),
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.school_rounded,
+                                                size: 50,
+                                                color: primaryGreen,
+                                              )),
+                                  ),
+                                  const SizedBox(height: 12),
                                   Text(
-                                    schoolProvider.namaSekolah,
+                                    nama.isNotEmpty ? nama : 'Sekolah', // placeholder
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                      fontSize: 34,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.w800,
-                                      color: darkerGreen,  // ✅ Hijau Tua
-                                      letterSpacing: 1.5,
+                                      color: darkerGreen,
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: darkGreen,  // ✅ Hijau Tua
-                                      borderRadius: BorderRadius.circular(20),
+                                      color: darkGreen,
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Text(
                                       'Sistem Informasi Sekolah',
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 10,
                                         color: Colors.white,
-                                        letterSpacing: 1.5,
+                                        letterSpacing: 1.2,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -362,26 +325,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               );
                             },
                           ),
-                          const SizedBox(height: 40),
-                          
-                          // Login Card
+                          const SizedBox(height: 28),
+
+                          // Login Card (sama seperti sebelumnya, tidak diubah)
                           Container(
-                            padding: const EdgeInsets.all(28),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: primaryGreen.withOpacity(0.3), width: 1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: primaryGreen.withOpacity(0.2), width: 1),
                               boxShadow: [
                                 BoxShadow(
-                                  color: darkerGreen.withOpacity(0.1),
-                                  blurRadius: 25,
-                                  spreadRadius: 3,
-                                  offset: const Offset(0, 8),
-                                ),
-                                BoxShadow(
-                                  color: primaryGreen.withOpacity(0.15),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
+                                  color: darkerGreen.withOpacity(0.08),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
@@ -390,33 +348,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  // Header Card
                                   Row(
                                     children: [
                                       Container(
-                                        width: 4,
-                                        height: 40,
+                                        width: 3,
+                                        height: 28,
                                         decoration: BoxDecoration(
                                           color: primaryGreen,
                                           borderRadius: BorderRadius.circular(2),
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: 10),
                                       const Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Selamat Datang',
                                             style: TextStyle(
-                                              fontSize: 22,
+                                              fontSize: 18,
                                               fontWeight: FontWeight.bold,
-                                              color: darkerGreen,  // ✅ Hijau Tua
+                                              color: darkerGreen,
                                             ),
                                           ),
                                           Text(
                                             'Silakan login untuk melanjutkan',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 11,
                                               color: Colors.grey,
                                             ),
                                           ),
@@ -424,39 +381,38 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 28),
-                                  
-                                  // Username Field
+                                  const SizedBox(height: 20),
                                   TextFormField(
                                     controller: _usernameController,
                                     decoration: InputDecoration(
                                       labelText: 'Username',
-                                      labelStyle: TextStyle(color: Colors.grey[600]),
+                                      labelStyle: const TextStyle(fontSize: 13),
                                       prefixIcon: Container(
-                                        margin: const EdgeInsets.all(8),
-                                        padding: const EdgeInsets.all(8),
+                                        margin: const EdgeInsets.all(6),
+                                        padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: primaryGreen.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: primaryGreen.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: const Icon(
                                           Icons.person_outline,
                                           color: primaryGreen,
-                                          size: 20,
+                                          size: 18,
                                         ),
                                       ),
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide(color: Colors.grey[300]!),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide(color: Colors.grey[300]!),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: primaryGreen, width: 2),
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: primaryGreen, width: 1.5),
                                       ),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                       filled: true,
                                       fillColor: softWhite,
                                     ),
@@ -467,49 +423,49 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       return null;
                                     },
                                   ),
-                                  const SizedBox(height: 18),
-                                  
-                                  // Password Field
+                                  const SizedBox(height: 14),
                                   TextFormField(
                                     controller: _passwordController,
                                     obscureText: _obscureText,
                                     decoration: InputDecoration(
                                       labelText: 'Password',
-                                      labelStyle: TextStyle(color: Colors.grey[600]),
+                                      labelStyle: const TextStyle(fontSize: 13),
                                       prefixIcon: Container(
-                                        margin: const EdgeInsets.all(8),
-                                        padding: const EdgeInsets.all(8),
+                                        margin: const EdgeInsets.all(6),
+                                        padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: primaryGreen.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: primaryGreen.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: const Icon(
                                           Icons.lock_outline,
                                           color: primaryGreen,
-                                          size: 20,
+                                          size: 18,
                                         ),
                                       ),
                                       suffixIcon: IconButton(
                                         icon: Icon(
                                           _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                                           color: Colors.grey[600],
+                                          size: 18,
                                         ),
                                         onPressed: () {
                                           setState(() => _obscureText = !_obscureText);
                                         },
                                       ),
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide(color: Colors.grey[300]!),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide(color: Colors.grey[300]!),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: primaryGreen, width: 2),
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: primaryGreen, width: 1.5),
                                       ),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                       filled: true,
                                       fillColor: softWhite,
                                     ),
@@ -520,14 +476,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       return null;
                                     },
                                   ),
-                                  const SizedBox(height: 14),
-                                  
-                                  // Remember Me
+                                  const SizedBox(height: 10),
                                   Row(
                                     children: [
                                       SizedBox(
-                                        width: 20,
-                                        height: 20,
+                                        width: 16,
+                                        height: 16,
                                         child: Checkbox(
                                           value: _rememberMe,
                                           onChanged: (value) {
@@ -536,61 +490,59 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                           activeColor: primaryGreen,
                                           checkColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(5),
+                                            borderRadius: BorderRadius.circular(4),
                                           ),
                                           side: BorderSide(color: Colors.grey[400]!),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 6),
                                       Text(
                                         'Ingat saya',
                                         style: TextStyle(
                                           color: Colors.grey[700],
-                                          fontSize: 13,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                       const Spacer(),
                                       TextButton(
                                         onPressed: () {},
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(0, 0),
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
                                         child: const Text(
                                           'Lupa password?',
                                           style: TextStyle(
-                                            color: darkGreen,  // ✅ Hijau Tua
-                                            fontSize: 13,
+                                            color: darkGreen,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 22),
-                                  
-                                  // Login Button - ✅ HIJAU TUA
+                                  const SizedBox(height: 16),
                                   _isLoading
                                       ? const SizedBox(
-                                          height: 54,
+                                          height: 44,
                                           child: Center(child: CircularProgressIndicator(color: primaryGreen)),
                                         )
                                       : Container(
-                                          height: 54,
+                                          height: 44,
                                           decoration: BoxDecoration(
-                                            gradient: LinearGradient(  // ✅ Gradient Hijau
+                                            gradient: LinearGradient(
                                               colors: [darkGreen, darkerGreen],
                                               begin: Alignment.centerLeft,
                                               end: Alignment.centerRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(12),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: darkGreen.withOpacity(0.4),  // ✅ Hijau
-                                                blurRadius: 15,
-                                                offset: const Offset(0, 5),
-                                              ),
-                                              BoxShadow(
-                                                color: primaryGreen.withOpacity(0.2),
-                                                blurRadius: 20,
-                                                offset: const Offset(0, 8),
+                                                color: darkGreen.withOpacity(0.3),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4),
                                               ),
                                             ],
                                           ),
@@ -600,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                               backgroundColor: Colors.transparent,
                                               shadowColor: Colors.transparent,
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(14),
+                                                borderRadius: BorderRadius.circular(12),
                                               ),
                                             ),
                                             child: Row(
@@ -609,15 +561,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                                 const Text(
                                                   'Masuk',
                                                   style: TextStyle(
-                                                    fontSize: 16,
+                                                    fontSize: 14,
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.white,
-                                                    letterSpacing: 1,
+                                                    letterSpacing: 0.8,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 8),
+                                                const SizedBox(width: 6),
                                                 Container(
-                                                  padding: const EdgeInsets.all(6),
+                                                  padding: const EdgeInsets.all(4),
                                                   decoration: BoxDecoration(
                                                     color: primaryGreen,
                                                     shape: BoxShape.circle,
@@ -625,53 +577,49 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                                   child: const Icon(
                                                     Icons.arrow_forward,
                                                     color: Colors.white,
-                                                    size: 14,
+                                                    size: 12,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
                                         ),
-                                  const SizedBox(height: 20),
-                                  
-                                  // Divider
+                                  const SizedBox(height: 14),
                                   Row(
                                     children: [
-                                      Expanded(child: Divider(color: Colors.grey[300])),
+                                      Expanded(child: Divider(color: Colors.grey[300], thickness: 0.8)),
                                       const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 12),
+                                        padding: EdgeInsets.symmetric(horizontal: 10),
                                         child: Text(
                                           'atau',
-                                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                                          style: TextStyle(color: Colors.grey, fontSize: 11),
                                         ),
                                       ),
-                                      Expanded(child: Divider(color: Colors.grey[300])),
+                                      Expanded(child: Divider(color: Colors.grey[300], thickness: 0.8)),
                                     ],
                                   ),
-                                  const SizedBox(height: 20),
-                                  
-                                  // Footer
+                                  const SizedBox(height: 14),
                                   Container(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: primaryGreen.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: primaryGreen.withOpacity(0.3)),
+                                      color: primaryGreen.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: primaryGreen.withOpacity(0.2)),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.info_outline,
-                                          size: 16,
-                                          color: darkGreen,  // ✅ Hijau Tua
+                                          size: 14,
+                                          color: darkGreen,
                                         ),
-                                        const SizedBox(width: 8),
+                                        const SizedBox(width: 6),
                                         Text(
                                           'Hubungi admin untuk bantuan',
                                           style: TextStyle(
-                                            fontSize: 12,
-                                            color: darkerGreen.withOpacity(0.8),  // ✅ Hijau Gelap
+                                            fontSize: 11,
+                                            color: darkerGreen.withOpacity(0.7),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -682,18 +630,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ),
                             ),
                           ),
-                          
-                          const SizedBox(height: 25),
-                          
-                          // Version Info
+
+                          const SizedBox(height: 16),
                           Text(
                             '© 2026 STA • v1.0.0',
                             style: TextStyle(
-                              fontSize: 11,
-                              color: darkerGreen.withOpacity(0.6),  // ✅ Hijau Gelap
-                              fontWeight: FontWeight.w500,
+                              fontSize: 10,
+                              color: darkerGreen.withOpacity(0.5),
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
@@ -10,7 +11,7 @@ class ApprovalScreen extends StatefulWidget {
 }
 
 class _ApprovalScreenState extends State<ApprovalScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   bool _isLoading = true;
   List _pendingRequests = [];

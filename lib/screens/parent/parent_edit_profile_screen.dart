@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/api_config.dart';
 
 class ParentEditProfileScreen extends StatefulWidget {
   const ParentEditProfileScreen({Key? key}) : super(key: key);
@@ -11,7 +12,7 @@ class ParentEditProfileScreen extends StatefulWidget {
 }
 
 class _ParentEditProfileScreenState extends State<ParentEditProfileScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = true;

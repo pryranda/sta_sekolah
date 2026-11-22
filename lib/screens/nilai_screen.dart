@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
+import '../config/api_config.dart';
 
 class NilaiScreen extends StatefulWidget {
   const NilaiScreen({Key? key}) : super(key: key);
@@ -11,7 +12,7 @@ class NilaiScreen extends StatefulWidget {
 }
 
 class _NilaiScreenState extends State<NilaiScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   bool _isLoading = true;
   List _nilaiList = [];

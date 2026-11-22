@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import '../../widgets/payment_dialog.dart';
+import '../../config/api_config.dart';
 
 class ParentSppScreen extends StatefulWidget {
   final String? anakId;
@@ -24,7 +25,7 @@ class ParentSppScreen extends StatefulWidget {
 }
 
 class _ParentSppScreenState extends State<ParentSppScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   bool _isLoading = true;
   List _anak = [];

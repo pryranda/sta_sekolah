@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/api_config.dart';
 
 class AdminSppGenerateScreen extends StatefulWidget {
   const AdminSppGenerateScreen({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class AdminSppGenerateScreen extends StatefulWidget {
 }
 
 class _AdminSppGenerateScreenState extends State<AdminSppGenerateScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   final _formKey = GlobalKey<FormState>();
   final _nominalController = TextEditingController();

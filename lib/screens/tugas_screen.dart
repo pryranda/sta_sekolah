@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'student/student_submit_tugas_screen.dart';
+import '../config/api_config.dart';
 
 class TugasScreen extends StatefulWidget {
   const TugasScreen({Key? key}) : super(key: key);
@@ -11,7 +12,7 @@ class TugasScreen extends StatefulWidget {
 }
 
 class _TugasScreenState extends State<TugasScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   bool _isLoading = true;
   List _tugasList = [];
@@ -39,8 +40,16 @@ class _TugasScreenState extends State<TugasScreen> {
         final data = jsonDecode(response.body);
         
         if (data['success']) {
+          // API membungkus daftar tugas di dalam objek { tugas: [...] };
+          // tetap dukung bentuk list langsung agar aman terhadap perubahan.
+          final payload = data['data'];
+          final List list = payload is List
+              ? payload
+              : (payload is Map
+                  ? (payload['tugas'] ?? payload['data'] ?? []) as List
+                  : []);
           setState(() {
-            _tugasList = data['data'] as List;
+            _tugasList = list;
             _isLoading = false;
           });
         } else {

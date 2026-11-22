@@ -14,6 +14,7 @@ import 'admin_spp_verification_screen.dart';
 import 'admin_spp_generate_screen.dart';
 import 'admin_spp_generate_all_screen.dart';
 import 'admin_laporan_keuangan_screen.dart';
+import '../../config/api_config.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -23,7 +24,7 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   Map<String, dynamic>? _userData;
   String _sekolahNama = 'SMK Negeri 1';

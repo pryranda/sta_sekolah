@@ -13,6 +13,7 @@ import 'parent/parent_jadwal_screen.dart';
 import 'parent/parent_nilai_screen.dart';
 import 'parent/parent_tugas_screen.dart';
 import 'parent/parent_edit_profile_screen.dart';
+import '../config/api_config.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class ParentDashboardScreen extends StatefulWidget {
 }
 
 class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   bool _isLoading = true;
   Map<String, dynamic>? _parentData;

@@ -1,0 +1,36 @@
+[Unit]
+Description=STA Sekolah REST API (Node.js)
+Documentation=file:///opt/sta-api/README.md
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sta-api
+ExecStart=/usr/bin/node /opt/sta-api/src/server.js
+Restart=always
+RestartSec=3
+User=root
+Group=root
+
+Environment=NODE_ENV=production
+Environment=PORT=5001
+Environment=BASE_URL=http://192.168.25.61:5001
+Environment=DB_HOST=127.0.0.1
+Environment=DB_PORT=3306
+Environment=DB_NAME=sta_sekolah
+Environment=DB_USER=sta_app
+Environment=UPLOAD_DIR=/opt/sta-api/uploads
+Environment=TZ=Asia/Jakarta
+
+# Kredensial (DB_PASSWORD, JWT_SECRET) disimpan terpisah agar tidak masuk repo.
+EnvironmentFile=/etc/sta-api.env
+
+StandardOutput=append:/var/log/sta-api.log
+StandardError=append:/var/log/sta-api.log
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

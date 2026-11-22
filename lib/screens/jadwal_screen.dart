@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class JadwalScreen extends StatefulWidget {
   const JadwalScreen({Key? key}) : super(key: key);
@@ -10,7 +11,7 @@ class JadwalScreen extends StatefulWidget {
 }
 
 class _JadwalScreenState extends State<JadwalScreen> {
-  static const String baseUrl = 'http://103.182.209.20:3000/api';
+  static const String baseUrl = kApiBaseUrl;
   
   bool _isLoading = true;
   String _selectedHari = 'Senin';
@@ -175,114 +176,97 @@ class _JadwalScreenState extends State<JadwalScreen> {
     );
   }
 
+  // ============= UBAHAN UTAMA ADA DI SINI =============
+  // Sekarang 1 jadwal = 1 Row (horizontal) dengan layout compact
   Widget _buildJadwalCard(Map<String, dynamic> jadwal, int nomor) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7BC8A4).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      nomor.toString(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF7BC8A4),
-                      ),
+            // 1. Nomor Urut
+            SizedBox(
+              width: 28,
+              child: Text(
+                '$nomor',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF7BC8A4),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            // 2. Nama Mapel + Kode
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    jadwal['nama_mapel'] ?? '-',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        jadwal['nama_mapel'] ?? '-',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        jadwal['kode_mapel'] ?? '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    jadwal['kode_mapel'] ?? '',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const Divider(height: 24),
-            Row(
-              children: [
-                _buildInfoChip(
-                  Icons.access_time,
-                  '${jadwal['jam_mulai'] ?? '-'} - ${jadwal['jam_selesai'] ?? '-'}',
-                  Colors.blue,
-                ),
-                const SizedBox(width: 8),
-                _buildInfoChip(
-                  Icons.meeting_room,
-                  jadwal['ruangan'] ?? '-',
-                  Colors.green,
-                ),
-              ],
+
+            const SizedBox(width: 8),
+
+            // 3. Waktu Mulai - Selesai
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${jadwal['jam_mulai'] ?? '-'} - ${jadwal['jam_selesai'] ?? '-'}',
+                style: const TextStyle(fontSize: 11),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _buildInfoChip(
-                  Icons.person,
-                  jadwal['guru_nama'] ?? '-',
-                  Colors.purple,
-                ),
-              ],
+
+            const SizedBox(width: 8),
+
+            // 4. Ruangan
+            Expanded(
+              flex: 1,
+              child: Text(
+                jadwal['ruangan'] ?? '-',
+                style: const TextStyle(fontSize: 11),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // 5. Nama Guru
+            Expanded(
+              flex: 2,
+              child: Text(
+                jadwal['guru_nama'] ?? '-',
+                style: const TextStyle(fontSize: 11),
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ),
     );
   }
