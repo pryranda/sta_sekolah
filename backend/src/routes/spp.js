@@ -8,6 +8,7 @@ const {
 } = require('../utils/helpers');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { uploadBukti } = require('../middleware/upload');
+const { requireScoped } = require('../utils/tenant');
 
 const router = express.Router();
 router.use(authenticate);
@@ -118,12 +119,12 @@ router.post('/parent/pembayaran', onlyOrtu, asyncHandler(async (req, res) => {
   const b = req.body || {};
   if (!b.tagihan_id) return fail(res, 'tagihan_id wajib diisi', 400);
 
+  if (!(await requireScoped(req, res, 'tagihan', b.tagihan_id, 'Tagihan'))) return;
   const tagihan = await queryOne(
     `SELECT t.*, s.nama AS nama_siswa FROM tagihan t
        JOIN siswa s ON s.id = t.siswa_id WHERE t.id = ? LIMIT 1`,
     [b.tagihan_id]
   );
-  if (!tagihan) return fail(res, 'Tagihan tidak ditemukan', 404);
 
   if (req.user.role !== 'admin') {
     if (!req.ortu) return fail(res, 'Data orang tua tidak tertaut dengan akun ini', 404);
@@ -225,8 +226,8 @@ router.post('/admin/jenis-pembayaran', onlyAdmin, asyncHandler(async (req, res) 
 
 router.put('/admin/jenis-pembayaran/:id', onlyAdmin, asyncHandler(async (req, res) => {
   const b = req.body || {};
-  const row = await queryOne(`SELECT * FROM jenis_pembayaran WHERE id = ?`, [req.params.id]);
-  if (!row) return fail(res, 'Jenis pembayaran tidak ditemukan', 404);
+  const row = await requireScoped(req, res, 'jenis_pembayaran', req.params.id, 'Jenis pembayaran');
+  if (!row) return;
 
   const sets = []; const vals = [];
   for (const f of ['nama', 'kode', 'tipe']) {
@@ -262,11 +263,10 @@ router.post('/admin/tagihan/generate-massal', onlyAdmin, asyncHandler(async (req
     return fail(res, 'Rentang bulan tidak valid', 400);
   }
 
-  const jp = await queryOne(
-    `SELECT * FROM jenis_pembayaran WHERE id = ? AND sekolah_id = ?`,
-    [b.jenis_pembayaran_id, req.user.sekolah_id]
+  const jp = await requireScoped(
+    req, res, 'jenis_pembayaran', b.jenis_pembayaran_id, 'Jenis pembayaran'
   );
-  if (!jp) return fail(res, 'Jenis pembayaran tidak ditemukan', 404);
+  if (!jp) return;
 
   const nominal = b.nominal_override !== null && b.nominal_override !== undefined
     ? toNum(b.nominal_override)
@@ -275,7 +275,10 @@ router.post('/admin/tagihan/generate-massal', onlyAdmin, asyncHandler(async (req
 
   const siswaFilter = ['s.sekolah_id = ?', "s.status = 'aktif'"];
   const siswaParams = [req.user.sekolah_id];
-  if (b.kelas_id) { siswaFilter.push('s.kelas_id = ?'); siswaParams.push(b.kelas_id); }
+  if (b.kelas_id) {
+    if (!(await requireScoped(req, res, 'kelas', b.kelas_id, 'Kelas'))) return;
+    siswaFilter.push('s.kelas_id = ?'); siswaParams.push(b.kelas_id);
+  }
   if (b.tingkat) { siswaFilter.push('k.tingkat = ?'); siswaParams.push(toNum(b.tingkat)); }
 
   const siswa = await query(
@@ -424,6 +427,9 @@ router.post('/admin/pembayaran/:pembayaranId/verify', onlyAdmin, asyncHandler(as
   }
   const isApprove = action.startsWith('approve');
 
+  if (!(await requireScoped(req, res, 'pembayaran', req.params.pembayaranId, 'Data pembayaran'))) {
+    return;
+  }
   const bayar = await queryOne(
     `SELECT p.*, t.nominal_akhir, s.nama AS nama_siswa
        FROM pembayaran p
@@ -432,7 +438,6 @@ router.post('/admin/pembayaran/:pembayaranId/verify', onlyAdmin, asyncHandler(as
       WHERE p.id = ? LIMIT 1`,
     [req.params.pembayaranId]
   );
-  if (!bayar) return fail(res, 'Data pembayaran tidak ditemukan', 404);
   if (bayar.status !== 'pending') return fail(res, 'Pembayaran ini sudah diverifikasi', 409);
 
   await withTransaction(async (conn) => {
@@ -614,7 +619,10 @@ router.get('/admin/tagihan', onlyAdmin, asyncHandler(async (req, res) => {
   if (req.query.bulan) { where.push('t.periode_bulan = ?'); params.push(toNum(req.query.bulan)); }
   if (req.query.tahun) { where.push('t.periode_tahun = ?'); params.push(toNum(req.query.tahun)); }
   if (req.query.status) { where.push('t.status = ?'); params.push(req.query.status); }
-  if (req.query.kelas_id) { where.push('s.kelas_id = ?'); params.push(req.query.kelas_id); }
+  if (req.query.kelas_id) {
+    if (!(await requireScoped(req, res, 'kelas', req.query.kelas_id, 'Kelas'))) return;
+    where.push('s.kelas_id = ?'); params.push(req.query.kelas_id);
+  }
 
   const rows = await query(
     `SELECT t.*, s.nama AS nama_siswa, s.nis, k.nama_kelas, jp.nama AS jenis_pembayaran

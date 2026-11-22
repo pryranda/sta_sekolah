@@ -89,6 +89,12 @@ Tabel inti: `sekolah`, `users`, `guru`, `mapel`, `guru_mapel`, `kelas`, `siswa`,
 `absensi_guru`, `nilai`, `tugas`, `tugas_submission`, `pengumuman`,
 `pengumuman_read`, `jenis_pembayaran`, `tagihan`, `pembayaran`, `hari_libur`.
 
+Migrasi (dijalankan sekali, aman diulang):
+
+```bash
+mysql < /opt/sta-api/sql/migrations/001_superadmin_multi_sekolah.sql
+```
+
 Mengisi ulang data contoh:
 
 ```bash
@@ -96,6 +102,64 @@ cd /opt/sta-api && set -a && . /etc/sta-api.env && set +a && SEED_PASSWORD='Gant
 ```
 
 > `--force` menghapus **seluruh** data lama lebih dulu.
+
+## 4b. Banyak sekolah (multi-tenant)
+
+Satu instalasi melayani banyak sekolah. Setiap baris data terikat pada
+`sekolah_id`, dan pemisahannya ditegakkan di dua lapis:
+
+1. **Endpoint daftar** selalu menyaring `WHERE ... sekolah_id = ?` dari token.
+2. **Endpoint yang menerima UUID di URL** (`/kelas/:id`, `/tugas/:id`,
+   `/schedule/:id`, dan sejenisnya) melewati `requireScoped()` di
+   `src/utils/tenant.js`, yang hanya mengambil baris bila baris itu milik
+   sekolah pemanggil. Tanpa lapis kedua ini, UUID milik sekolah lain tetap
+   terbaca walaupun daftarnya sudah tersaring.
+
+Respons untuk "tidak ada" dan "milik sekolah lain" sengaja dibuat sama
+(`404 ... tidak ditemukan`) supaya keberadaan data sekolah lain tidak bisa
+ditebak dari pesan error.
+
+Admin sekolah **tidak bisa** menembus sekolah lain walaupun mengirim
+`sekolah_id` milik sekolah lain di body — nilai itu diabaikan dan selalu
+diganti `sekolah_id` miliknya sendiri.
+
+### Peran `superadmin` (Admin Aplikasi)
+
+Peran kelima di luar siswa/guru/orang_tua/admin. `users.sekolah_id` bernilai
+NULL untuk peran ini karena ia bekerja lintas sekolah. Hanya superadmin yang
+boleh:
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/api/sekolah` | Daftar seluruh sekolah + ringkasan isinya |
+| POST | `/api/sekolah` | Daftarkan sekolah baru **sekaligus akun admin pertamanya** |
+| GET | `/api/sekolah/:id` | Detail sekolah + daftar adminnya |
+| PUT | `/api/sekolah/:id` | Ubah sekolah mana pun |
+| DELETE | `/api/sekolah/:id` | Hapus sekolah **beserta seluruh datanya** |
+
+Penghapusan memakai `ON DELETE CASCADE`, jadi ikut membuang siswa, guru,
+kelas, nilai, absensi, tagihan, dan akun sekolah tersebut. Karena itu request
+wajib menyertakan `{ "konfirmasi": "<nama sekolah persis>" }`; tanpa itu
+ditolak 400.
+
+Membuat sekolah tanpa admin pertama akan menghasilkan sekolah yang tidak bisa
+dipakai siapa pun, jadi `admin_username` dan `admin_password` wajib diisi dan
+keduanya dibuat dalam satu transaksi bersama sekolahnya.
+
+Catatan: `username` unik secara global (bukan per sekolah). Jadi dua sekolah
+tidak bisa punya `admin` dengan username sama — beri awalan, misalnya
+`admin.alazhar`. Bila nanti ingin username sama antar sekolah, login perlu
+pemilih sekolah lebih dulu.
+
+### Menambahkan superadmin pertama
+
+Tidak ada endpoint publik untuk ini (sengaja). Buat langsung di server:
+
+```bash
+cd /opt/sta-api && set -a && . /etc/sta-api.env && set +a && DB_USER=sta_app DB_NAME=sta_sekolah node -e 'const b=require("bcryptjs"),c=require("crypto"),m=require("mysql2/promise");(async()=>{const k=await m.createConnection({host:"127.0.0.1",user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_NAME});await k.execute("INSERT INTO users (id,sekolah_id,username,password,role,role_name,nama) VALUES (?,NULL,?,?,?,?,?)",[c.randomUUID(),"superadmin",await b.hash(process.env.PW,10),"superadmin","Admin Aplikasi","Administrator Aplikasi"]);await k.end();console.log("dibuat")})()'
+```
+
+Jalankan dengan `PW='...'` di depan perintah untuk menentukan passwordnya.
 
 ## 5. Autentikasi
 
@@ -106,7 +170,7 @@ Objek `user` memuat `sekolah_id` (dipakai `SchoolService`), `role`, `role_name`,
 `nama`, `jabatan`, dan — khusus siswa — `id` yang berisi **id siswa** (bukan id user),
 karena dashboard siswa memakainya untuk memanggil endpoint SPP.
 
-Role: `siswa`, `guru`, `orang_tua`, `admin`.
+Role: `siswa`, `guru`, `orang_tua`, `admin`, `superadmin`.
 Untuk admin, `jabatan = 'keuangan'` membuka menu keuangan di aplikasi.
 
 ## 6. Daftar endpoint
@@ -118,8 +182,9 @@ Untuk admin, `jabatan = 'keuangan'` membuka menu keuangan di aplikasi.
 | GET | `/api/auth/profile` |
 | PUT | `/api/auth/change-password` |
 | POST | `/api/auth/logout` |
-| GET | `/api/sekolah/info?sekolah_id=` |
-| PUT | `/api/sekolah/lokasi` · `/api/sekolah/info` *(admin)* |
+| GET | `/api/sekolah/info?sekolah_id=` (publik; `sekolah_id` wajib bila sekolah lebih dari satu) |
+| PUT | `/api/sekolah/lokasi` · `/api/sekolah/info` *(admin; selalu untuk sekolahnya sendiri)* |
+| GET/POST/PUT/DELETE | `/api/sekolah` dan `/api/sekolah/:id` *(superadmin)* |
 | GET | `/api/health` |
 
 ### Siswa

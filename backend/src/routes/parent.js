@@ -6,6 +6,7 @@ const {
   ok, fail, asyncHandler, uuid, nowDateTimeStr, toNum, toIntOrNull,
 } = require('../utils/helpers');
 const { authenticate, requireRole } = require('../middleware/auth');
+const { requireScoped, findScoped } = require('../utils/tenant');
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ const onlyOrtu = requireRole('orang_tua', 'admin');
 async function resolveOrtu(req, res) {
   if (req.ortu) return req.ortu;
   if (req.user.role === 'admin' && req.query.orang_tua_id) {
-    const o = await queryOne(`SELECT * FROM orang_tua WHERE id = ?`, [req.query.orang_tua_id]);
+    const o = await findScoped(req, 'orang_tua', req.query.orang_tua_id);
     if (o) return o;
   }
   fail(res, 'Data orang tua tidak tertaut dengan akun ini', 404);
@@ -54,7 +55,10 @@ async function listAnak(ortuId) {
  * Mengembalikan true bila diizinkan; jika tidak, response error sudah dikirim.
  */
 async function canAccessAnak(req, res, anakId) {
-  if (req.user.role === 'admin') return true;
+  if (req.user.role === 'admin' || req.user.role === 'superadmin') {
+    // admin boleh lintas-anak, tetapi tetap di dalam sekolahnya sendiri
+    return !!(await requireScoped(req, res, 'siswa', anakId, 'Siswa'));
+  }
 
   if (req.user.role === 'siswa') {
     if (req.siswa && req.siswa.id === anakId) return true;
@@ -153,8 +157,8 @@ router.get('/pengumuman', asyncHandler(async (req, res) => {
 }));
 
 router.post('/pengumuman/:pengumumanId/read', asyncHandler(async (req, res) => {
-  const peng = await queryOne(`SELECT id FROM pengumuman WHERE id = ?`, [req.params.pengumumanId]);
-  if (!peng) return fail(res, 'Pengumuman tidak ditemukan', 404);
+  const peng = await requireScoped(req, res, 'pengumuman', req.params.pengumumanId, 'Pengumuman');
+  if (!peng) return;
 
   await query(
     `INSERT INTO pengumuman_read (id, pengumuman_id, user_id)
@@ -466,13 +470,13 @@ router.post('/approval/:absensiId', onlyOrtu, asyncHandler(async (req, res) => {
   }
   const isApprove = action.startsWith('approve');
 
+  if (!(await requireScoped(req, res, 'absensi', req.params.absensiId, 'Data permohonan'))) return;
   const absen = await queryOne(
     `SELECT a.*, s.nama AS nama_siswa FROM absensi a
        JOIN siswa s ON s.id = a.siswa_id
       WHERE a.id = ? LIMIT 1`,
     [req.params.absensiId]
   );
-  if (!absen) return fail(res, 'Data permohonan tidak ditemukan', 404);
   if (req.user.role !== 'admin' && !(await assertAnak(o.id, absen.siswa_id))) {
     return fail(res, 'Siswa tersebut bukan anak Anda', 403);
   }

@@ -5,6 +5,7 @@ const { query, queryOne } = require('../db');
 const { ok, fail, asyncHandler, uuid, toNum } = require('../utils/helpers');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { uploadTugas } = require('../middleware/upload');
+const { requireScoped } = require('../utils/tenant');
 const { listTugasSiswa, submitTugas } = require('./student');
 const { gradeSubmission } = require('./teacher');
 
@@ -55,6 +56,7 @@ router.get('/guru/tugas', onlyGuru, asyncHandler(async (req, res) => {
 }));
 
 router.get('/guru/tugas/:tugasId', onlyGuru, asyncHandler(async (req, res) => {
+  if (!(await requireScoped(req, res, 'tugas', req.params.tugasId, 'Tugas'))) return;
   const row = await queryOne(
     `SELECT t.*, k.nama_kelas, m.nama_mapel, m.kode_mapel, g.nama AS guru_nama
        FROM tugas t
@@ -86,12 +88,11 @@ router.post('/guru/tugas', onlyGuru, asyncHandler(async (req, res) => {
   if (!b.kelas_id) return fail(res, 'kelas_id wajib diisi', 400);
   if (!b.judul || !String(b.judul).trim()) return fail(res, 'Judul tugas wajib diisi', 400);
 
-  const kelas = await queryOne(`SELECT id, sekolah_id FROM kelas WHERE id = ?`, [b.kelas_id]);
-  if (!kelas) return fail(res, 'Kelas tidak ditemukan', 404);
+  const kelas = await requireScoped(req, res, 'kelas', b.kelas_id, 'Kelas');
+  if (!kelas) return;
 
-  if (b.mapel_id) {
-    const m = await queryOne(`SELECT id FROM mapel WHERE id = ?`, [b.mapel_id]);
-    if (!m) return fail(res, 'Mata pelajaran tidak ditemukan', 404);
+  if (b.mapel_id && !(await requireScoped(req, res, 'mapel', b.mapel_id, 'Mata pelajaran'))) {
+    return;
   }
 
   // 'YYYY-MM-DDTHH:mm:ss.sss' dari Flutter -> format MySQL DATETIME
@@ -128,8 +129,8 @@ router.post('/guru/tugas', onlyGuru, asyncHandler(async (req, res) => {
 
 router.put('/guru/tugas/:tugasId', onlyGuru, asyncHandler(async (req, res) => {
   const b = req.body || {};
-  const row = await queryOne(`SELECT * FROM tugas WHERE id = ?`, [req.params.tugasId]);
-  if (!row) return fail(res, 'Tugas tidak ditemukan', 404);
+  const row = await requireScoped(req, res, 'tugas', req.params.tugasId, 'Tugas');
+  if (!row) return;
 
   const sets = [];
   const vals = [];
@@ -153,8 +154,8 @@ router.put('/guru/tugas/:tugasId', onlyGuru, asyncHandler(async (req, res) => {
 }));
 
 router.delete('/guru/tugas/:tugasId', onlyGuru, asyncHandler(async (req, res) => {
-  const row = await queryOne(`SELECT id FROM tugas WHERE id = ?`, [req.params.tugasId]);
-  if (!row) return fail(res, 'Tugas tidak ditemukan', 404);
+  const row = await requireScoped(req, res, 'tugas', req.params.tugasId, 'Tugas');
+  if (!row) return;
   await query(`DELETE FROM tugas WHERE id = ?`, [row.id]);
   return ok(res, null, 'Tugas berhasil dihapus');
 }));
@@ -214,10 +215,8 @@ router.get('/orang-tua/anak/:anakId/tugas',
       if (!rel) return fail(res, 'Siswa tersebut bukan anak Anda', 403);
     }
 
-    const siswa = await queryOne(
-      `SELECT id, kelas_id FROM siswa WHERE id = ? LIMIT 1`, [req.params.anakId]
-    );
-    if (!siswa) return fail(res, 'Siswa tidak ditemukan', 404);
+    const siswa = await requireScoped(req, res, 'siswa', req.params.anakId, 'Siswa');
+    if (!siswa) return;
     if (!siswa.kelas_id) return ok(res, { tugas: [] }, 'Anak belum memiliki kelas');
 
     const rows = await query(

@@ -7,6 +7,7 @@ const {
   toNum, hitungNilaiAkhir, predikat,
 } = require('../utils/helpers');
 const { authenticate, requireRole } = require('../middleware/auth');
+const { requireScoped, findScoped } = require('../utils/tenant');
 
 const router = express.Router();
 router.use(authenticate, requireRole('guru', 'admin'));
@@ -15,7 +16,7 @@ router.use(authenticate, requireRole('guru', 'admin'));
 async function resolveGuru(req, res) {
   if (req.guru) return req.guru;
   if (req.user.role === 'admin' && req.query.guru_id) {
-    const g = await queryOne(`SELECT * FROM guru WHERE id = ?`, [req.query.guru_id]);
+    const g = await findScoped(req, 'guru', req.query.guru_id);
     if (g) return g;
   }
   fail(res, 'Data guru tidak tertaut dengan akun ini', 404);
@@ -100,6 +101,7 @@ router.get('/kelas', asyncHandler(async (req, res) => {
 // ====================================================================
 router.get('/kelas/:kelasId/siswa', asyncHandler(async (req, res) => {
   const g = await resolveGuru(req, res); if (!g) return;
+  if (!(await requireScoped(req, res, 'kelas', req.params.kelasId, 'Kelas'))) return;
 
   const rows = await query(
     `SELECT s.id, s.nama, s.nis, s.nisn, s.jenis_kelamin, s.foto_url,
@@ -125,10 +127,8 @@ router.post('/nilai', asyncHandler(async (req, res) => {
     return fail(res, 'siswa_id dan mapel_id wajib diisi', 400);
   }
 
-  const siswa = await queryOne(`SELECT id FROM siswa WHERE id = ?`, [b.siswa_id]);
-  if (!siswa) return fail(res, 'Siswa tidak ditemukan', 404);
-  const mapel = await queryOne(`SELECT id FROM mapel WHERE id = ?`, [b.mapel_id]);
-  if (!mapel) return fail(res, 'Mata pelajaran tidak ditemukan', 404);
+  if (!(await requireScoped(req, res, 'siswa', b.siswa_id, 'Siswa'))) return;
+  if (!(await requireScoped(req, res, 'mapel', b.mapel_id, 'Mata pelajaran'))) return;
 
   const nTugas = toNum(b.nilai_tugas);
   const nUts = toNum(b.nilai_uts);
@@ -187,6 +187,7 @@ router.post('/nilai', asyncHandler(async (req, res) => {
 // ====================================================================
 router.get('/nilai/:siswaId/mapel/:mapelId', asyncHandler(async (req, res) => {
   const g = await resolveGuru(req, res); if (!g) return;
+  if (!(await requireScoped(req, res, 'siswa', req.params.siswaId, 'Siswa'))) return;
 
   const params = [req.params.siswaId, req.params.mapelId];
   const where = ['n.siswa_id = ?', 'n.mapel_id = ?'];
@@ -211,6 +212,7 @@ router.get('/nilai/:siswaId/mapel/:mapelId', asyncHandler(async (req, res) => {
 // ====================================================================
 router.get('/absensi/kelas/:kelasId', asyncHandler(async (req, res) => {
   const g = await resolveGuru(req, res); if (!g) return;
+  if (!(await requireScoped(req, res, 'kelas', req.params.kelasId, 'Kelas'))) return;
 
   const siswa = await query(
     `SELECT id, nama, nis FROM siswa
@@ -250,6 +252,7 @@ router.get('/absensi/kelas/:kelasId', asyncHandler(async (req, res) => {
 // ====================================================================
 router.post('/absensi/kelas/:kelasId', asyncHandler(async (req, res) => {
   const g = await resolveGuru(req, res); if (!g) return;
+  if (!(await requireScoped(req, res, 'kelas', req.params.kelasId, 'Kelas'))) return;
   const b = req.body || {};
   const tanggal = b.tanggal || todayStr();
   const items = Array.isArray(b.items) ? b.items : [];
@@ -354,6 +357,7 @@ router.post('/absensi/checkout', asyncHandler(async (req, res) => {
 router.get('/tugas/:tugasId/submissions', asyncHandler(async (req, res) => {
   const g = await resolveGuru(req, res); if (!g) return;
 
+  if (!(await requireScoped(req, res, 'tugas', req.params.tugasId, 'Tugas'))) return;
   const tugas = await queryOne(
     `SELECT t.*, k.nama_kelas, m.nama_mapel
        FROM tugas t
@@ -362,7 +366,6 @@ router.get('/tugas/:tugasId/submissions', asyncHandler(async (req, res) => {
       WHERE t.id = ? LIMIT 1`,
     [req.params.tugasId]
   );
-  if (!tugas) return fail(res, 'Tugas tidak ditemukan', 404);
 
   const submissions = await query(
     `SELECT sub.id, sub.tugas_id, sub.siswa_id, sub.file_nama, sub.file_url,
@@ -409,10 +412,10 @@ const gradeSubmission = asyncHandler(async (req, res) => {
   const g = await resolveGuru(req, res); if (!g) return;
   const b = req.body || {};
 
-  const sub = await queryOne(
-    `SELECT * FROM tugas_submission WHERE id = ? LIMIT 1`, [req.params.submissionId]
+  const sub = await requireScoped(
+    req, res, 'tugas_submission', req.params.submissionId, 'Data pengumpulan'
   );
-  if (!sub) return fail(res, 'Data pengumpulan tidak ditemukan', 404);
+  if (!sub) return;
 
   const nilai = toNum(b.nilai, -1);
   if (nilai < 0 || nilai > 100) return fail(res, 'Nilai harus antara 0 - 100', 400);

@@ -7,6 +7,7 @@ import 'student_dashboard_screen.dart';
 import 'parent_dashboard_screen.dart';
 import 'teacher/teacher_dashboard_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
+import 'superadmin/superadmin_dashboard_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/school_provider.dart';
 
@@ -88,11 +89,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         // Hapus cache sekolah agar data baru diambil
         await prefs.remove('school_info');
 
-        // 🔥 Ambil data sekolah SETELAH login (token & user tersimpan)
-        await context.read<SchoolProvider>().loadSchoolProfile(forceReload: true);
-
         final user = result['data']['user'];
         final userRole = (user['role'] ?? user['role_name'] ?? '').toString().toLowerCase();
+
+        // Superadmin tidak terikat satu sekolah, jadi tidak ada profil sekolah
+        // yang perlu dimuat untuknya.
+        if (userRole != 'superadmin') {
+          await context.read<SchoolProvider>().loadSchoolProfile(forceReload: true);
+        }
 
         Widget targetScreen;
         switch (userRole) {
@@ -108,6 +112,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           case 'admin':
           case 'administrator':
             targetScreen = const AdminDashboardScreen();
+            break;
+          case 'superadmin':
+            targetScreen = const SuperadminDashboardScreen();
             break;
           default:
             targetScreen = const HomeScreen();

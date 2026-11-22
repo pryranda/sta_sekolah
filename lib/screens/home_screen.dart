@@ -6,6 +6,7 @@ import 'login_screen.dart';
 import 'student_dashboard_screen.dart';
 import 'parent_dashboard_screen.dart';
 import 'teacher/teacher_dashboard_screen.dart';
+import 'superadmin/superadmin_dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,6 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'guru':
         dashboard = const TeacherDashboardScreen();
+        break;
+      case 'superadmin':
+        dashboard = const SuperadminDashboardScreen();
         break;
       case 'orang_tua':
         dashboard = const ParentDashboardScreen();

@@ -9,6 +9,7 @@ const {
 } = require('../utils/helpers');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { generateJadwal, DEFAULT_CONFIG } = require('../utils/scheduler');
+const { requireScoped } = require('../utils/tenant');
 
 const router = express.Router();
 router.use(authenticate, requireRole('admin'));
@@ -203,10 +204,10 @@ router.post('/guru-mapel', asyncHandler(async (req, res) => {
   const b = req.body || {};
   if (!b.guru_id || !b.mapel_id) return fail(res, 'guru_id dan mapel_id wajib diisi', 400);
 
-  const guru = await queryOne(`SELECT id, nama FROM guru WHERE id = ?`, [b.guru_id]);
-  if (!guru) return fail(res, 'Guru tidak ditemukan', 404);
-  const mapel = await queryOne(`SELECT id, nama_mapel FROM mapel WHERE id = ?`, [b.mapel_id]);
-  if (!mapel) return fail(res, 'Mata pelajaran tidak ditemukan', 404);
+  const guru = await requireScoped(req, res, 'guru', b.guru_id, 'Guru');
+  if (!guru) return;
+  const mapel = await requireScoped(req, res, 'mapel', b.mapel_id, 'Mata pelajaran');
+  if (!mapel) return;
 
   const dup = await queryOne(
     `SELECT id FROM guru_mapel WHERE guru_id = ? AND mapel_id = ?`, [b.guru_id, b.mapel_id]
@@ -229,8 +230,8 @@ router.post('/guru-mapel', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/guru-mapel/:id', asyncHandler(async (req, res) => {
-  const row = await queryOne(`SELECT * FROM guru_mapel WHERE id = ?`, [req.params.id]);
-  if (!row) return fail(res, 'Data mapping tidak ditemukan', 404);
+  const row = await requireScoped(req, res, 'guru_mapel', req.params.id, 'Data mapping');
+  if (!row) return;
   await query(`DELETE FROM guru_mapel WHERE id = ?`, [row.id]);
   return ok(res, null, 'Mapping berhasil dihapus');
 }));
@@ -255,6 +256,9 @@ router.get('/kelas', asyncHandler(async (req, res) => {
 router.post('/kelas', asyncHandler(async (req, res) => {
   const b = req.body || {};
   if (!b.nama_kelas) return fail(res, 'Nama kelas wajib diisi', 400);
+  if (b.wali_kelas_id && !(await requireScoped(req, res, 'guru', b.wali_kelas_id, 'Wali kelas'))) {
+    return;
+  }
 
   const id = uuid();
   await query(
@@ -380,6 +384,8 @@ router.post('/siswa', asyncHandler(async (req, res) => {
   if (!b.nama || !String(b.nama).trim()) return fail(res, 'Nama siswa wajib diisi', 400);
   if (!b.nis) return fail(res, 'NIS wajib diisi', 400);
 
+  if (b.kelas_id && !(await requireScoped(req, res, 'kelas', b.kelas_id, 'Kelas'))) return;
+
   const dupNis = await queryOne(
     `SELECT id FROM siswa WHERE sekolah_id = ? AND nis = ?`, [req.user.sekolah_id, b.nis]
   );
@@ -438,6 +444,8 @@ router.put('/siswa/:id', asyncHandler(async (req, res) => {
     );
     if (dup) return fail(res, `NIS ${b.nis} sudah dipakai siswa lain`, 409);
   }
+
+  if (b.kelas_id && !(await requireScoped(req, res, 'kelas', b.kelas_id, 'Kelas'))) return;
 
   const sets = []; const vals = [];
   const simple = ['nama', 'nis', 'nisn', 'tempat_lahir', 'agama', 'alamat',
@@ -535,6 +543,10 @@ router.post('/schedule/generate', asyncHandler(async (req, res) => {
 
   if (!kelasIds.length) return fail(res, 'Pilih minimal satu kelas', 400);
 
+  for (const kid of kelasIds) {
+    if (!(await requireScoped(req, res, 'kelas', kid, 'Kelas'))) return;
+  }
+
   const result = await generateJadwal({
     sekolahId: req.user.sekolah_id,
     kelasIds,
@@ -550,6 +562,7 @@ router.post('/schedule/generate', asyncHandler(async (req, res) => {
 }));
 
 router.get('/schedule/kelas/:kelasId', asyncHandler(async (req, res) => {
+  if (!(await requireScoped(req, res, 'kelas', req.params.kelasId, 'Kelas'))) return;
   const where = ['j.kelas_id = ?'];
   const params = [req.params.kelasId];
   if (req.query.hari) { where.push('j.hari = ?'); params.push(req.query.hari); }
@@ -576,8 +589,10 @@ router.get('/schedule/kelas/:kelasId', asyncHandler(async (req, res) => {
 
 router.put('/schedule/:id', asyncHandler(async (req, res) => {
   const b = req.body || {};
-  const row = await queryOne(`SELECT * FROM jadwal WHERE id = ?`, [req.params.id]);
-  if (!row) return fail(res, 'Slot jadwal tidak ditemukan', 404);
+  const row = await requireScoped(req, res, 'jadwal', req.params.id, 'Slot jadwal');
+  if (!row) return;
+  if (b.mapel_id && !(await requireScoped(req, res, 'mapel', b.mapel_id, 'Mata pelajaran'))) return;
+  if (b.guru_id && !(await requireScoped(req, res, 'guru', b.guru_id, 'Guru'))) return;
 
   const mapelId = b.mapel_id || null;
   const guruId = b.guru_id || null;
@@ -614,13 +629,14 @@ router.put('/schedule/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/schedule/manual/:id', asyncHandler(async (req, res) => {
-  const row = await queryOne(`SELECT * FROM jadwal WHERE id = ?`, [req.params.id]);
-  if (!row) return fail(res, 'Slot jadwal tidak ditemukan', 404);
+  const row = await requireScoped(req, res, 'jadwal', req.params.id, 'Slot jadwal');
+  if (!row) return;
   await query(`DELETE FROM jadwal WHERE id = ?`, [row.id]);
   return ok(res, null, 'Slot jadwal berhasil dihapus');
 }));
 
 router.delete('/schedule/kelas/:kelasId', asyncHandler(async (req, res) => {
+  if (!(await requireScoped(req, res, 'kelas', req.params.kelasId, 'Kelas'))) return;
   const result = await query(`DELETE FROM jadwal WHERE kelas_id = ?`, [req.params.kelasId]);
   return ok(res, { dihapus: result.affectedRows ?? 0 }, 'Jadwal kelas berhasil dikosongkan');
 }));
@@ -794,6 +810,8 @@ router.post('/orang-tua/:id/anak', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/orang-tua/:id/anak/:siswaId', asyncHandler(async (req, res) => {
+  if (!(await requireScoped(req, res, 'orang_tua', req.params.id, 'Orang tua'))) return;
+  if (!(await requireScoped(req, res, 'siswa', req.params.siswaId, 'Siswa'))) return;
   await query(
     `DELETE FROM siswa_orang_tua WHERE orang_tua_id = ? AND siswa_id = ?`,
     [req.params.id, req.params.siswaId]

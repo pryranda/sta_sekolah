@@ -1040,5 +1040,79 @@ class ApiService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  // ==========================================
+  // SUPERADMIN - KELOLA SEKOLAH (ADMIN APLIKASI)
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getSekolahList() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/sekolah'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 20));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getSekolahDetail(String id) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/sekolah/$id'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 20));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> createSekolah(Map<String, dynamic> data) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/sekolah'),
+        headers: headers,
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 25));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateSekolah(String id, Map<String, dynamic> data) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl/sekolah/$id'),
+        headers: headers,
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 20));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Menghapus sekolah beserta SELURUH datanya.
+  /// [konfirmasi] harus sama persis dengan nama sekolah.
+  static Future<Map<String, dynamic>> deleteSekolah(String id, String konfirmasi) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/sekolah/$id'),
+        headers: headers,
+        body: jsonEncode({'konfirmasi': konfirmasi}),
+      ).timeout(const Duration(seconds: 25));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }  // ← Penutup class ApiService
 // ❌ JANGAN ADA CODE APAPUN DI BAWAH SINI (di luar class)

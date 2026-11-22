@@ -56,6 +56,12 @@ async function buildUserPayload(user) {
       base.user_id = user.id;
       base.orang_tua_id = o.id;
     }
+  } else if (user.role === 'superadmin') {
+    // Admin aplikasi: tidak terikat pada satu sekolah.
+    base.user_id = user.id;
+    base.sekolah_id = user.sekolah_id || '';
+    const total = await queryOne(`SELECT COUNT(*) AS c FROM sekolah`);
+    base.jumlah_sekolah = total ? Number(total.c) : 0;
   } else {
     base.user_id = user.id;
   }

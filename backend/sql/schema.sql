@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS sekolah (
   jam_masuk       TIME          DEFAULT '07:00:00',
   jam_pulang      TIME          DEFAULT '13:30:00',
   created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
-  updated_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_sekolah_nama (nama)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -33,10 +34,10 @@ CREATE TABLE IF NOT EXISTS sekolah (
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id         CHAR(36)     NOT NULL PRIMARY KEY,
-  sekolah_id CHAR(36)     NOT NULL,
+  sekolah_id CHAR(36)     DEFAULT NULL,  -- NULL untuk superadmin (lintas sekolah)
   username   VARCHAR(80)  NOT NULL,
   password   VARCHAR(255) NOT NULL,
-  role       ENUM('siswa','guru','orang_tua','admin') NOT NULL,
+  role       ENUM('siswa','guru','orang_tua','admin','superadmin') NOT NULL,
   role_name  VARCHAR(60)  DEFAULT NULL,
   nama       VARCHAR(150) DEFAULT NULL,
   email      VARCHAR(120) DEFAULT NULL,
