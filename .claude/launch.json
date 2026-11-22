@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sta-sekolah-web",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8088",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "build/web"
+      ],
+      "port": 8088
+    },
+    {
+      "name": "sta-sekolah-web-debug",
+      "runtimeExecutable": "/Users/pryo/development/flutter/bin/flutter",
+      "runtimeArgs": [
+        "run",
+        "-d",
+        "chrome",
+        "--web-port",
+        "8089"
+      ],
+      "port": 8089
+    }
+  ]
+}

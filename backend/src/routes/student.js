@@ -97,15 +97,20 @@ router.get('/absensi', asyncHandler(async (req, res) => {
   if (req.query.bulan) { where.push('MONTH(a.tanggal) = ?'); params.push(toNum(req.query.bulan)); }
   if (req.query.tahun) { where.push('YEAR(a.tanggal) = ?');  params.push(toNum(req.query.tahun)); }
 
+  const sekolah = await queryOne(`SELECT jam_masuk FROM sekolah WHERE id = ?`, [s.sekolah_id]);
+  const batas = sekolah?.jam_masuk || '07:00:00';
+
   const absensi = await query(
     `SELECT a.id, a.tanggal, a.status, a.jam_masuk, a.jam_pulang, a.keterangan,
-            a.approval_status, a.approval_note, a.latitude, a.longitude, a.jarak
+            a.approval_status, a.approval_note, a.latitude, a.longitude, a.jarak,
+            (a.jam_masuk IS NOT NULL AND a.jam_masuk > ?) AS is_terlambat
        FROM absensi a
       WHERE ${where.join(' AND ')}
       ORDER BY a.tanggal DESC
       LIMIT 400`,
-    params
+    [batas, ...params]
   );
+  for (const a of absensi) a.is_terlambat = !!a.is_terlambat;
 
   const rekapRow = await queryOne(
     `SELECT
@@ -176,8 +181,13 @@ router.post('/absensi/checkin', asyncHandler(async (req, res) => {
   const jamMasuk = nowTimeStr();
   const sekolah = await queryOne(`SELECT jam_masuk FROM sekolah WHERE id = ?`, [s.sekolah_id]);
   const batas = sekolah?.jam_masuk || '07:00:00';
-  const status = (b.status && b.status !== 'hadir') ? b.status
-    : (jamMasuk > batas ? 'terlambat' : 'hadir');
+  const terlambat = jamMasuk > batas;
+
+  // Status tetap dibatasi pada nilai yang dikenal aplikasi
+  // (hadir / izin / sakit / alpha). Keterlambatan dilaporkan lewat
+  // field `is_terlambat`, bukan sebagai status tersendiri, supaya siswa
+  // yang datang terlambat tetap terhitung hadir di seluruh layar.
+  const status = (b.status && b.status !== 'hadir') ? b.status : 'hadir';
 
   const jarakStr = b.jarak != null ? String(b.jarak) : (cek.jarak != null ? String(cek.jarak) : null);
 
@@ -207,7 +217,10 @@ router.post('/absensi/checkin', asyncHandler(async (req, res) => {
     [s.id, tanggal]
   );
 
-  return ok(res, row, `Check-in berhasil pada ${jamMasuk.slice(0, 5)} (${status})`);
+  return ok(res, { ...row, is_terlambat: terlambat },
+    terlambat
+      ? `Check-in berhasil pada ${jamMasuk.slice(0, 5)} (terlambat dari ${batas.slice(0, 5)})`
+      : `Check-in berhasil pada ${jamMasuk.slice(0, 5)}`);
 }));
 
 // ====================================================================
