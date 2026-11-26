@@ -279,10 +279,13 @@ dijalankan berulang (tagihan yang sudah ada dilewati, bukan diduplikasi).
 | Method | Path |
 |---|---|
 | GET/POST/PUT/DELETE | `/api/admin/guru` |
+| POST | `/api/admin/guru/import` *(upload massal JSON rows)* |
 | GET/POST/PUT/DELETE | `/api/admin/mapel` |
+| POST | `/api/admin/mapel/import` *(upload massal JSON rows)* |
 | GET/POST/DELETE | `/api/admin/guru-mapel` |
 | GET/POST/PUT/DELETE | `/api/admin/kelas` |
 | GET/POST/PUT/DELETE | `/api/admin/siswa` (filter `kelas_id`, `tingkat`, `status`, `search`) |
+| POST | `/api/admin/siswa/import` *(upload massal JSON rows)* |
 | GET | `/api/admin/siswa/:id` |
 | GET/PUT | `/api/admin/schedule/config` |
 | POST | `/api/admin/schedule/generate` |

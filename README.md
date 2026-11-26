@@ -13,7 +13,7 @@ Server API aktif: **`http://10.0.0.39:5001/api`**
 | **Siswa** (`siswa`) | Dashboard siswa, jadwal pelajaran, absensi GPS (check-in/check-out/izin), tugas & pengumpulan lampiran, nilai, pengumuman, dan tagihan SPP |
 | **Guru** (`guru`) | Dashboard guru, jadwal mengajar, absensi guru, absensi siswa per kelas, pembuatan tugas & penilaian submission, serta input nilai |
 | **Orang Tua** (`orang_tua`) | Dashboard pemantauan anak, persetujuan izin absensi (`approval`), jadwal, absensi, nilai, tugas, pengumuman, profil, dan pembayaran/upload bukti SPP |
-| **Admin Sekolah** (`admin`) | Manajemen guru, mapel, pemetaan guru-mapel, kelas, siswa, generator & editor jadwal pelajaran otomatis, hari libur, pengumuman, pengaturan sekolah (identitas, logo, jam masuk/pulang, koordinat & radius GPS), serta verifikasi & laporan keuangan SPP |
+| **Admin Sekolah** (`admin`) | Manajemen guru, mapel, pemetaan guru-mapel, kelas, siswa (termasuk **upload massal CSV/Excel** di panel web admin), generator & editor jadwal pelajaran otomatis, hari libur, pengumuman, pengaturan sekolah (identitas, logo, jam masuk/pulang, koordinat & radius GPS), serta verifikasi & laporan keuangan SPP |
 | **Admin Aplikasi** (`superadmin`) | Manajemen multi-sekolah (buat sekolah baru beserta admin pertamanya, ubah, dan hapus sekolah) |
 
 ---
@@ -30,7 +30,9 @@ sta_sekolah/
 │   ├── widgets/                   # Komponen bersama (responsive layout, logo picker, dialog pembayaran)
 │   ├── screens/                   # Layar per peran (admin, superadmin, teacher, student, parent)
 │   └── main.dart                  # Entry point, tema Material 3, locale id_ID, dan routing
-├── backend/                       # Backend Node.js + Express + MySQL (lihat backend/README.md)
+├── backend/
+│   ├── public/admin/              # Panel Web Admin (HTML/CSS/JS tanpa Flutter)
+│   └── ...                        # Backend Node.js + Express + MySQL (lihat backend/README.md)
 ├── web/                           # Aset dan konfigurasi Flutter Web
 ├── android/                       # Konfigurasi proyek Android
 ├── ios/                           # Konfigurasi proyek iOS
@@ -90,6 +92,21 @@ flutter run
 Catatan HTTP cleartext (`http://10.0.0.39:5001`):
 - **Android**: `android:usesCleartextTraffic="true"` sudah diaktifkan di [`android/app/src/main/AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml).
 - **iOS**: [`ios/Runner/Info.plist`](ios/Runner/Info.plist) belum menyertakan pengecualian `NSAppTransportSecurity` (`NSAllowsArbitraryLoads`). Untuk build iOS dengan endpoint HTTP non-HTTPS, tambahkan konfigurasi ATS atau gunakan HTTPS.
+
+---
+
+## Panel Web Admin (Tanpa Flutter)
+
+Untuk kebutuhan admin sekolah (upload massal siswa/guru/mapel/orang tua via CSV atau copy-paste Excel, kelola kelas, jadwal, pengumuman, verifikasi SPP, dan pengaturan sekolah), tersedia **Panel Web Admin** ringan (HTML/CSS/JS) di [`backend/public/admin/`](backend/public/admin/).
+
+- Saat backend Express berjalan, buka langsung: **`http://10.0.0.39:5001/admin/`**
+- Atau sajikan secara terpisah untuk testing lokal:
+
+```bash
+python3 -m http.server 8082 --directory backend/public/admin
+```
+
+Lalu buka `http://localhost:8082` (default mengarah ke `http://10.0.0.39:5001/api`, dapat diubah di form login pada bagian **Pengaturan Server API**).
 
 ---
 

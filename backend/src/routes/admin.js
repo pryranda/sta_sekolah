@@ -820,6 +820,205 @@ router.delete('/orang-tua/:id/anak/:siswaId', asyncHandler(async (req, res) => {
 }));
 
 // ====================================================================
+// IMPORT MASSAL (SISWA, GURU, MAPEL)
+// ====================================================================
+async function runBulkImport(rows, handler) {
+  const results = [];
+  let berhasil = 0;
+  let gagal = 0;
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const rowNum = i + 1;
+    try {
+      const info = await handler(rows[i] || {}, rowNum);
+      berhasil += 1;
+      results.push({ row: rowNum, status: 'ok', ...info });
+    } catch (err) {
+      gagal += 1;
+      results.push({
+        row: rowNum,
+        status: 'error',
+        message: err.message || 'Gagal memproses baris',
+      });
+    }
+  }
+
+  return { total: rows.length, berhasil, gagal, results };
+}
+
+router.post('/siswa/import', asyncHandler(async (req, res) => {
+  const b = req.body || {};
+  const rows = Array.isArray(b.rows) ? b.rows : [];
+  if (!rows.length) return fail(res, 'Data siswa (rows) wajib diisi', 400);
+  if (rows.length > 1000) return fail(res, 'Maksimal 1000 baris per unggahan', 400);
+
+  const kelasRows = await query(
+    `SELECT id, nama_kelas FROM kelas WHERE sekolah_id = ?`,
+    [req.user.sekolah_id]
+  );
+  const kelasById = new Map(kelasRows.map((k) => [k.id, k]));
+  const kelasByName = new Map(
+    kelasRows.map((k) => [String(k.nama_kelas).trim().toLowerCase(), k])
+  );
+
+  const defaultKelasId = b.default_kelas_id || null;
+  if (defaultKelasId && !kelasById.has(defaultKelasId)) {
+    return fail(res, 'default_kelas_id tidak ditemukan', 400);
+  }
+  const defaultPassword = b.default_password ? String(b.default_password) : '';
+
+  const summary = await runBulkImport(rows, async (r) => {
+    const nama = String(r.nama || '').trim();
+    const nis = String(r.nis || '').trim();
+    if (!nama) throw new Error('Nama siswa wajib diisi');
+    if (!nis) throw new Error('NIS wajib diisi');
+
+    let kelasId = r.kelas_id ? String(r.kelas_id).trim() : null;
+    if (kelasId && !kelasById.has(kelasId)) {
+      throw new Error(`kelas_id "${kelasId}" tidak ditemukan`);
+    }
+    if (!kelasId && r.kelas) {
+      const matched = kelasByName.get(String(r.kelas).trim().toLowerCase());
+      if (!matched) throw new Error(`Kelas "${r.kelas}" tidak ditemukan`);
+      kelasId = matched.id;
+    }
+    if (!kelasId) kelasId = defaultKelasId;
+
+    const dupNis = await queryOne(
+      `SELECT id FROM siswa WHERE sekolah_id = ? AND nis = ?`,
+      [req.user.sekolah_id, nis]
+    );
+    if (dupNis) throw new Error(`NIS ${nis} sudah terdaftar`);
+
+    const username = String(r.username || nis).trim();
+    const rawPass = String(r.password || defaultPassword || nis);
+    if (rawPass.length < 6) {
+      throw new Error('Password minimal 6 karakter (isi kolom password atau default password)');
+    }
+
+    const dupUser = await queryOne(`SELECT id FROM users WHERE username = ?`, [username]);
+    if (dupUser) throw new Error(`Username "${username}" sudah dipakai`);
+
+    const userId = uuid();
+    const siswaId = uuid();
+    const hash = await bcrypt.hash(rawPass, 10);
+    const jk = String(r.jenis_kelamin || '').trim().toUpperCase().startsWith('P') ? 'P' : 'L';
+    const tgl = r.tanggal_lahir ? String(r.tanggal_lahir).trim().slice(0, 10) : null;
+
+    await withTransaction(async (conn) => {
+      await conn.execute(
+        `INSERT INTO users (id, sekolah_id, username, password, role, role_name, nama, email)
+         VALUES (?,?,?,?, 'siswa', 'Siswa', ?, ?)`,
+        [userId, req.user.sekolah_id, username, hash, nama, r.email || null]
+      );
+      await conn.execute(
+        `INSERT INTO siswa
+           (id, sekolah_id, user_id, kelas_id, nama, nis, nisn, tempat_lahir, tanggal_lahir,
+            jenis_kelamin, agama, alamat, no_hp, email, tahun_ajaran, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'aktif')`,
+        [siswaId, req.user.sekolah_id, userId, kelasId, nama, nis,
+         r.nisn || null, r.tempat_lahir || null, tgl || null, jk,
+         r.agama || null, r.alamat || null, r.no_hp || null, r.email || null,
+         r.tahun_ajaran || null]
+      );
+    });
+
+    return { nis, nama, username, message: 'Berhasil ditambahkan' };
+  });
+
+  return ok(
+    res,
+    summary,
+    `Import siswa selesai: ${summary.berhasil} berhasil, ${summary.gagal} gagal`
+  );
+}));
+
+router.post('/guru/import', asyncHandler(async (req, res) => {
+  const b = req.body || {};
+  const rows = Array.isArray(b.rows) ? b.rows : [];
+  if (!rows.length) return fail(res, 'Data guru (rows) wajib diisi', 400);
+  if (rows.length > 500) return fail(res, 'Maksimal 500 baris per unggahan', 400);
+
+  const defaultPassword = b.default_password ? String(b.default_password) : '';
+
+  const summary = await runBulkImport(rows, async (r) => {
+    const nama = String(r.nama || '').trim();
+    if (!nama) throw new Error('Nama guru wajib diisi');
+
+    const username = String(r.username || r.nip || r.email || '').trim();
+    if (!username) throw new Error('Username/NIP/Email wajib diisi');
+
+    const rawPass = String(r.password || defaultPassword || '');
+    if (rawPass.length < 6) throw new Error('Password minimal 6 karakter');
+
+    const dup = await queryOne(`SELECT id FROM users WHERE username = ?`, [username]);
+    if (dup) throw new Error(`Username "${username}" sudah dipakai`);
+
+    const userId = uuid();
+    const guruId = uuid();
+    const hash = await bcrypt.hash(rawPass, 10);
+    const jk = String(r.jenis_kelamin || '').trim().toUpperCase().startsWith('P') ? 'P' : 'L';
+
+    await withTransaction(async (conn) => {
+      await conn.execute(
+        `INSERT INTO users (id, sekolah_id, username, password, role, role_name, nama, email)
+         VALUES (?,?,?,?, 'guru', 'Guru', ?, ?)`,
+        [userId, req.user.sekolah_id, username, hash, nama, r.email || null]
+      );
+      await conn.execute(
+        `INSERT INTO guru (id, sekolah_id, user_id, nama, nip, email, no_hp, jenis_kelamin, alamat)
+         VALUES (?,?,?,?,?,?,?,?,?)`,
+        [guruId, req.user.sekolah_id, userId, nama, r.nip || null,
+         r.email || null, r.no_hp || null, jk, r.alamat || null]
+      );
+    });
+
+    return { nama, username, message: 'Berhasil ditambahkan' };
+  });
+
+  return ok(
+    res,
+    summary,
+    `Import guru selesai: ${summary.berhasil} berhasil, ${summary.gagal} gagal`
+  );
+}));
+
+router.post('/mapel/import', asyncHandler(async (req, res) => {
+  const b = req.body || {};
+  const rows = Array.isArray(b.rows) ? b.rows : [];
+  if (!rows.length) return fail(res, 'Data mapel (rows) wajib diisi', 400);
+  if (rows.length > 500) return fail(res, 'Maksimal 500 baris per unggahan', 400);
+
+  const summary = await runBulkImport(rows, async (r) => {
+    const namaMapel = String(r.nama_mapel || '').trim();
+    const kodeMapel = String(r.kode_mapel || '').trim().toUpperCase();
+    if (!namaMapel) throw new Error('Nama mata pelajaran wajib diisi');
+    if (!kodeMapel) throw new Error('Kode mata pelajaran wajib diisi');
+
+    const dup = await queryOne(
+      `SELECT id FROM mapel WHERE sekolah_id = ? AND kode_mapel = ?`,
+      [req.user.sekolah_id, kodeMapel]
+    );
+    if (dup) throw new Error(`Kode mapel "${kodeMapel}" sudah terdaftar`);
+
+    await query(
+      `INSERT INTO mapel (id, sekolah_id, nama_mapel, kode_mapel, tingkat, jam_per_pekan)
+       VALUES (?,?,?,?,?,?)`,
+      [uuid(), req.user.sekolah_id, namaMapel, kodeMapel,
+       toIntOrNull(r.tingkat), toNum(r.jam_per_pekan, 2)]
+    );
+
+    return { kode_mapel: kodeMapel, nama_mapel: namaMapel, message: 'Berhasil ditambahkan' };
+  });
+
+  return ok(
+    res,
+    summary,
+    `Import mapel selesai: ${summary.berhasil} berhasil, ${summary.gagal} gagal`
+  );
+}));
+
+// ====================================================================
 // RINGKASAN DASHBOARD ADMIN
 // ====================================================================
 router.get('/dashboard', asyncHandler(async (req, res) => {
