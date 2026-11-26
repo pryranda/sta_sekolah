@@ -23,12 +23,6 @@ for (const sub of ['', 'bukti', 'tugas', 'logo']) {
 }
 app.use('/uploads', express.static(config.uploadDir, { maxAge: '1h' }));
 
-// --- panel web admin (non-Flutter) ----------------------------------
-const adminWebDir = path.join(__dirname, '..', 'public', 'admin');
-if (fs.existsSync(adminWebDir)) {
-  app.use('/admin', express.static(adminWebDir));
-}
-
 // --- healthcheck ----------------------------------------------------
 app.get('/api/health', async (req, res) => {
   try {

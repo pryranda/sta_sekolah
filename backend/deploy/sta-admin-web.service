@@ -1,0 +1,27 @@
+[Unit]
+Description=STA Sekolah Panel Web Admin (Non-Flutter)
+Documentation=file:///opt/sta-api/README.md
+After=network-online.target sta-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sta-api
+ExecStart=/usr/bin/node /opt/sta-api/src/admin-web-server.js
+Restart=always
+RestartSec=3
+User=root
+Group=root
+
+Environment=NODE_ENV=production
+Environment=ADMIN_WEB_HOST=0.0.0.0
+Environment=ADMIN_WEB_PORT=8082
+
+StandardOutput=append:/var/log/sta-admin-web.log
+StandardError=append:/var/log/sta-admin-web.log
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

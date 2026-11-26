@@ -97,13 +97,13 @@ Catatan HTTP cleartext (`http://10.0.0.39:5001`):
 
 ## Panel Web Admin (Tanpa Flutter)
 
-Untuk kebutuhan admin sekolah (upload massal siswa/guru/mapel/orang tua via CSV atau copy-paste Excel, kelola kelas, jadwal, pengumuman, verifikasi SPP, dan pengaturan sekolah), tersedia **Panel Web Admin** ringan (HTML/CSS/JS) di [`backend/public/admin/`](backend/public/admin/).
+Untuk kebutuhan admin sekolah (upload massal siswa/guru/mapel/orang tua via CSV atau copy-paste Excel, kelola kelas, jadwal, pengumuman, verifikasi SPP, dan pengaturan sekolah), tersedia **Panel Web Admin** ringan (HTML/CSS/JS) di [`backend/public/admin/`](backend/public/admin/) yang berjalan terpisah dari port API demi keamanan:
 
-- Saat backend Express berjalan, buka langsung: **`http://10.0.0.39:5001/admin/`**
-- Atau sajikan secara terpisah untuk testing lokal:
+- **Di server (`sta-admin-web.service`):** **`http://10.0.0.39:8082/`** (dibatasi firewall hanya untuk jaringan `10.0.0.0/24`, terhubung ke API `http://10.0.0.39:5001/api`)
+- **Di komputer lokal:**
 
 ```bash
-python3 -m http.server 8082 --directory backend/public/admin
+cd backend && npm run start:admin-web
 ```
 
 Lalu buka `http://localhost:8082` (default mengarah ke `http://10.0.0.39:5001/api`, dapat diubah di form login pada bagian **Pengaturan Server API**).

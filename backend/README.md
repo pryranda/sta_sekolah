@@ -14,9 +14,13 @@ Server aktif: **http://10.0.0.39:5001/api**
 backend/
 ├── package.json
 ├── sql/schema.sql              # skema database (22 tabel)
-├── deploy/sta-api.service      # unit systemd
+├── deploy/
+│   ├── sta-api.service         # unit systemd API (port 5001)
+│   └── sta-admin-web.service   # unit systemd Panel Web Admin (port 8082)
+├── public/admin/               # Panel Web Admin (HTML/CSS/JS tanpa Flutter)
 └── src/
-    ├── server.js               # entry point, middleware, error handler
+    ├── server.js               # entry point API, middleware, error handler
+    ├── admin-web-server.js     # server statis khusus Panel Web Admin (port 8082)
     ├── config.js               # konfigurasi dari environment
     ├── db.js                   # connection pool + helper transaksi
     ├── seed.js                 # data awal (sekolah, user, kelas, dst.)
@@ -36,17 +40,17 @@ backend/
 ### Di server (sudah terpasang)
 
 ```bash
-systemctl status sta-api
+systemctl status sta-api sta-admin-web
 ```
 
 Perintah lain yang sering dipakai:
 
 ```bash
-systemctl restart sta-api
+systemctl restart sta-api sta-admin-web
 ```
 
 ```bash
-tail -f /var/log/sta-api.log
+tail -f /var/log/sta-api.log /var/log/sta-admin-web.log
 ```
 
 ### Di komputer lokal

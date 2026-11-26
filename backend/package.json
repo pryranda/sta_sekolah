@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node src/server.js",
+    "start:admin-web": "node src/admin-web-server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/seed.js"
   },

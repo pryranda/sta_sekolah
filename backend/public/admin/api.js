@@ -10,10 +10,8 @@ window.STA = window.STA || {};
 
   function getDefaultApiUrl() {
     const loc = window.location;
-    if (loc.port === '5001' || loc.pathname.startsWith('/admin')) {
-      if (loc.protocol.startsWith('http')) {
-        return `${loc.origin}/api`;
-      }
+    if (loc.protocol.startsWith('http') && loc.hostname && !['localhost', '127.0.0.1'].includes(loc.hostname)) {
+      return `${loc.protocol}//${loc.hostname}:5001/api`;
     }
     return DEFAULT_API_FALLBACK;
   }
