@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../login_screen.dart';
 import 'superadmin_sekolah_form.dart';
+import '../../widgets/responsive_layout.dart';
 
 class SuperadminDashboardScreen extends StatefulWidget {
   const SuperadminDashboardScreen({Key? key}) : super(key: key);
@@ -241,7 +242,7 @@ class _SuperadminDashboardScreenState extends State<SuperadminDashboardScreen> {
   Widget _buildRingkasan() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, primaryDark],
@@ -249,25 +250,28 @@ class _SuperadminDashboardScreenState extends State<SuperadminDashboardScreen> {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Selamat datang,',
-              style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
-          Text(_namaUser,
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _kartuStat('Sekolah', _sekolah.length.toString(), Icons.apartment),
-              const SizedBox(width: 10),
-              _kartuStat('Siswa', _totalDari('jumlah_siswa').toString(), Icons.groups),
-              const SizedBox(width: 10),
-              _kartuStat('Guru', _totalDari('jumlah_guru').toString(), Icons.badge),
-            ],
-          ),
-        ],
+      child: ResponsiveCenter(
+        maxWidth: 1080,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Selamat datang,',
+                style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+            Text(_namaUser,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _kartuStat('Sekolah', _sekolah.length.toString(), Icons.apartment),
+                const SizedBox(width: 10),
+                _kartuStat('Siswa', _totalDari('jumlah_siswa').toString(), Icons.groups),
+                const SizedBox(width: 10),
+                _kartuStat('Guru', _totalDari('jumlah_guru').toString(), Icons.badge),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -294,7 +298,8 @@ class _SuperadminDashboardScreenState extends State<SuperadminDashboardScreen> {
         ),
       );
 
-  Widget _buildPencarian() => Padding(
+  Widget _buildPencarian() => ResponsiveCenter(
+        maxWidth: 1080,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
         child: TextField(
           onChanged: (v) => setState(() => _cari = v),
@@ -336,11 +341,39 @@ class _SuperadminDashboardScreenState extends State<SuperadminDashboardScreen> {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-      itemCount: data.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, i) => _kartuSekolah(data[i] as Map<String, dynamic>),
+    return ResponsiveCenter(
+      maxWidth: 1080,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 720;
+          final rowCount = isWide ? (data.length / 2).ceil() : data.length;
+
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+            itemCount: rowCount,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              if (!isWide) {
+                return _kartuSekolah(data[index] as Map<String, dynamic>);
+              }
+              final left = data[index * 2] as Map<String, dynamic>;
+              final rightIndex = index * 2 + 1;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _kartuSekolah(left)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: rightIndex < data.length
+                        ? _kartuSekolah(data[rightIndex] as Map<String, dynamic>)
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
     );
   }
 

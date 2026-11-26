@@ -14,6 +14,7 @@ import 'parent/parent_nilai_screen.dart';
 import 'parent/parent_tugas_screen.dart';
 import 'parent/parent_edit_profile_screen.dart';
 import '../config/api_config.dart';
+import '../widgets/responsive_layout.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({Key? key}) : super(key: key);
@@ -213,7 +214,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                           ),
                         ),
                         child: SafeArea(
-                          child: Padding(
+                          child: ResponsiveCenter(
+                            maxWidth: 1080,
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                             child: Column(
                               children: [
@@ -256,8 +258,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                                               context,
                                               MaterialPageRoute(builder: (_) => const ParentEditProfileScreen()),
                                             );
-                                            
-                                            // Refresh data jika ada perubahan
                                             if (result == true) {
                                               _loadDashboardData();
                                             }
@@ -266,15 +266,14 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                                         ),
                                         IconButton(
                                           icon: const Icon(Icons.logout, color: Color(0xFF1A2B1C), size: 20),
+                                          tooltip: 'Logout',
                                           onPressed: _logout,
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 20),
-                                
-                                // Profile Photo & Nama Ibu
+                                const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Container(
@@ -284,8 +283,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                                         border: Border.all(color: const Color(0xFF7BC8A4), width: 3),
                                       ),
                                       child: Container(
-                                        width: 70,
-                                        height: 70,
+                                        width: 66,
+                                        height: 66,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           shape: BoxShape.circle,
@@ -297,7 +296,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                                             ),
                                           ],
                                         ),
-                                        child: const Icon(Icons.person, size: 38, color: Color(0xFF7BC8A4)),
+                                        child: const Icon(Icons.person, size: 36, color: Color(0xFF7BC8A4)),
                                       ),
                                     ),
                                     const SizedBox(width: 14),
@@ -326,90 +325,80 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
-                                
+                                const SizedBox(height: 14),
                                 // Informasi Orang Tua (2 Kolom: Ibu & Ayah)
                                 Container(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.7),
-                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.white.withOpacity(0.82),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // KOLOM KIRI: Informasi Ibu
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              '👩 Informasi Ibu',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF7BC8A4),
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                '👩 Informasi Ibu',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF4A9E7A),
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(height: 10),
-                                            if (_parentData?['hp_ibu'] != null && _parentData!['hp_ibu'].isNotEmpty)
-                                              _buildInfoRow(
-                                                icon: Icons.phone,
-                                                label: 'No HP',
-                                                value: _parentData!['hp_ibu'],
-                                              ),
-                                            if (_parentData?['alamat'] != null && _parentData!['alamat'].isNotEmpty)
-                                              _buildInfoRow(
-                                                icon: Icons.location_on_outlined,
-                                                label: 'Alamat',
-                                                value: _parentData!['alamat'],
-                                                isMultiline: true,
-                                              ),
-                                          ],
+                                              const SizedBox(height: 8),
+                                              if (_parentData?['hp_ibu'] != null && _parentData!['hp_ibu'].isNotEmpty)
+                                                _buildInfoRow(
+                                                  icon: Icons.phone,
+                                                  label: 'No HP',
+                                                  value: _parentData!['hp_ibu'],
+                                                ),
+                                              if (_parentData?['alamat'] != null && _parentData!['alamat'].isNotEmpty)
+                                                _buildInfoRow(
+                                                  icon: Icons.location_on_outlined,
+                                                  label: 'Alamat',
+                                                  value: _parentData!['alamat'],
+                                                  isMultiline: true,
+                                                ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      
-                                      const SizedBox(width: 16),
-                                      
-                                      // Divider vertikal
-                                      Container(
-                                        width: 1,
-                                        height: 100,
-                                        color: Colors.grey.shade300,
-                                      ),
-                                      
-                                      const SizedBox(width: 16),
-                                      
-                                      // KOLOM KANAN: Informasi Ayah
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              '👨 Informasi Ayah',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF2196F3),
+                                        const SizedBox(width: 14),
+                                        VerticalDivider(width: 1, thickness: 1, color: Colors.grey.shade300),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                '👨 Informasi Ayah',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF2196F3),
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(height: 10),
-                                            if (_parentData?['nama_ayah'] != null && _parentData!['nama_ayah'].isNotEmpty)
-                                              _buildInfoRow(
-                                                icon: Icons.person_outline,
-                                                label: 'Nama',
-                                                value: _parentData!['nama_ayah'],
-                                              ),
-                                            if (_parentData?['hp_ayah'] != null && _parentData!['hp_ayah'].isNotEmpty)
-                                              _buildInfoRow(
-                                                icon: Icons.phone,
-                                                label: 'No HP',
-                                                value: _parentData!['hp_ayah'],
-                                              ),
-                                          ],
+                                              const SizedBox(height: 8),
+                                              if (_parentData?['nama_ayah'] != null && _parentData!['nama_ayah'].isNotEmpty)
+                                                _buildInfoRow(
+                                                  icon: Icons.person_outline,
+                                                  label: 'Nama',
+                                                  value: _parentData!['nama_ayah'],
+                                                ),
+                                              if (_parentData?['hp_ayah'] != null && _parentData!['hp_ayah'].isNotEmpty)
+                                                _buildInfoRow(
+                                                  icon: Icons.phone,
+                                                  label: 'No HP',
+                                                  value: _parentData!['hp_ayah'],
+                                                ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -422,7 +411,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   
                   // Content
                   SliverToBoxAdapter(
-                    child: Padding(
+                    child: ResponsiveCenter(
+                      maxWidth: 1080,
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,13 +450,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                           const SizedBox(height: 12),
                           
                           // Grid Menu
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 1.2,
+                          ResponsiveMenuGrid(
+                            mobileColumns: 2,
+                            tabletColumns: 4,
+                            desktopColumns: 4,
+                            mobileAspectRatio: 1.2,
+                            tabletAspectRatio: 1.2,
+                            desktopAspectRatio: 1.35,
                             children: [
                               _buildMenuCard(
                                 'Approval',
@@ -532,7 +522,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 100),
+                          const SizedBox(height: 48),
                         ],
                       ),
                     ),

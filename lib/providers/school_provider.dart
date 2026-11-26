@@ -13,6 +13,8 @@ class SchoolProvider with ChangeNotifier {
   double _latitude = 0.0;
   double _longitude = 0.0;
   double _radiusMaksimal = 0.0;
+  String _jamMasuk = '';
+  String _jamPulang = '';
 
   bool _isLoading = false;
   bool _isLoaded = false;
@@ -28,6 +30,8 @@ class SchoolProvider with ChangeNotifier {
   double get latitude => _latitude;
   double get longitude => _longitude;
   double get radiusMaksimal => _radiusMaksimal;
+  String get jamMasuk => _jamMasuk;
+  String get jamPulang => _jamPulang;
   bool get isLoading => _isLoading;
   bool get isLoaded => _isLoaded;
 
@@ -80,5 +84,7 @@ class SchoolProvider with ChangeNotifier {
     _latitude = double.tryParse(data['latitude']?.toString() ?? '') ?? 0.0;
     _longitude = double.tryParse(data['longitude']?.toString() ?? '') ?? 0.0;
     _radiusMaksimal = double.tryParse(data['radius_maksimal']?.toString() ?? '') ?? 0.0;
+    _jamMasuk = data['jam_masuk']?.toString() ?? '';
+    _jamPulang = data['jam_pulang']?.toString() ?? '';
   }
 }

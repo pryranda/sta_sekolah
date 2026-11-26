@@ -19,6 +19,7 @@
 **/android/key.properties
 *.jks
 **/android/app/build/
+**/android/build/
 
 # iOS/XCode related
 **/ios/**/*.mode1v3

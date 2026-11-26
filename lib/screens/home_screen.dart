@@ -6,7 +6,9 @@ import 'login_screen.dart';
 import 'student_dashboard_screen.dart';
 import 'parent_dashboard_screen.dart';
 import 'teacher/teacher_dashboard_screen.dart';
+import 'admin/admin_dashboard_screen.dart';
 import 'superadmin/superadmin_dashboard_screen.dart';
+import '../widgets/responsive_layout.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -60,6 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'superadmin':
         dashboard = const SuperadminDashboardScreen();
         break;
+      case 'admin':
+      case 'administrator':
+        dashboard = const AdminDashboardScreen();
+        break;
       case 'orang_tua':
         dashboard = const ParentDashboardScreen();
         break;
@@ -101,45 +107,53 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(color: Color(0xFF7BC8A4)),
-            const SizedBox(height: 24),
-            Text(
-              'Selamat Datang, $_userName',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF7BC8A4),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _userRole.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+      backgroundColor: const Color(0xFFF6F8FA),
+      body: ResponsiveCenter(
+        maxWidth: 420,
+        padding: const EdgeInsets.all(24),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: Color(0xFF7BC8A4)),
+                const SizedBox(height: 24),
+                Text(
+                  'Selamat Datang, $_userName',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7BC8A4),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _userRole.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextButton(
+                  onPressed: _logout,
+                  child: const Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            TextButton(
-              onPressed: _logout,
-              child: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

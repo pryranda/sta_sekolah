@@ -12,6 +12,7 @@ import 'jadwal_screen.dart';
 import 'nilai_screen.dart';
 import 'tugas_screen.dart';
 import 'login_screen.dart';
+import '../widgets/responsive_layout.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({Key? key}) : super(key: key);
@@ -242,85 +243,141 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               ),
             ),
             SliverToBoxAdapter(
-              child: Padding(
+              child: ResponsiveCenter(
+                maxWidth: 1080,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildAbsensiStatusCard(),
-                    const SizedBox(height: 20),
-                    Row(
+                    const SizedBox(height: 22),
+                    const Row(
                       children: [
                         Icon(Icons.apps, color: primaryGreen, size: 20),
-                        const SizedBox(width: 8),
-                        const Text('Menu Utama', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: accentBlack)),
+                        SizedBox(width: 8),
+                        Text('Menu Utama', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: accentBlack)),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    ResponsiveMenuGrid(
+                      mobileColumns: 2,
+                      tabletColumns: 4,
+                      desktopColumns: 4,
+                      mobileAspectRatio: 1.25,
+                      tabletAspectRatio: 1.25,
+                      desktopAspectRatio: 1.45,
                       children: [
-                        Expanded(
-                          child: _buildModernActionCard(
-                            'Absensi',
-                            Icons.check_circle_outline,
-                            const Color(0xFF4CAF50),
-                            () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const AbsensiScreen()),
-                              );
-                              _loadDashboardData();
-                            },
-                          ),
+                        _buildModernActionCard(
+                          'Absensi',
+                          Icons.check_circle_outline,
+                          const Color(0xFF4CAF50),
+                          () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const AbsensiScreen()),
+                            );
+                            _loadDashboardData();
+                          },
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildModernActionCard('Jadwal', Icons.calendar_today_outlined, const Color(0xFF2196F3), () {
+                        _buildModernActionCard('Jadwal', Icons.calendar_today_outlined, const Color(0xFF2196F3), () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const JadwalScreen()));
-                        })),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _buildModernActionCard('Nilai', Icons.star_outline, const Color(0xFFFF9800), () {
+                        }),
+                        _buildModernActionCard('Nilai', Icons.star_outline, const Color(0xFFFF9800), () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const NilaiScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildModernActionCard('Tugas', Icons.assignment_outlined, const Color(0xFF9C27B0), () {
+                        }),
+                        _buildModernActionCard('Tugas', Icons.assignment_outlined, const Color(0xFF9C27B0), () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const TugasScreen()));
-                        })),
+                        }),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    _buildModernSectionHeader('📚 Jadwal Hari Ini'),
-                    if (_jadwalHariIni.isEmpty)
-                      _buildEmptyStateCard('Tidak ada jadwal hari ini', Icons.event_busy)
-                    else
-                      ..._jadwalHariIni.map((jadwal) => _buildModernJadwalCard(jadwal)),
-                    const SizedBox(height: 24),
-                    _buildModernSectionHeader('📢 Pengumuman Terbaru'),
-                    if (_pengumuman.isEmpty)
-                      _buildEmptyStateCard('Tidak ada pengumuman', Icons.campaign_outlined)
-                    else
-                      ..._pengumuman.map((peng) => _buildModernPengumumanCard(peng)),
-                    const SizedBox(height: 24),
-                    _buildModernSectionHeader('📊 Nilai Terbaru'),
-                    if (_nilaiTerbaru.isEmpty)
-                      _buildEmptyStateCard('Belum ada nilai', Icons.analytics_outlined)
-                    else
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: primaryGreen.withOpacity(0.2)),
-                          boxShadow: [BoxShadow(color: primaryGreen.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 4))],
-                        ),
-                        child: Column(children: _nilaiTerbaru.map((nilai) => _buildModernNilaiRow(nilai)).toList()),
-                      ),
-                    const SizedBox(height: 24),
-                    _buildModernSectionHeader('💰 Informasi SPP'),
-                    _buildModernSPPCard(),
-                    const SizedBox(height: 100),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final jadwalSection = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildModernSectionHeader('📚 Jadwal Hari Ini'),
+                            if (_jadwalHariIni.isEmpty)
+                              _buildEmptyStateCard('Tidak ada jadwal hari ini', Icons.event_busy)
+                            else
+                              ..._jadwalHariIni.map((jadwal) => _buildModernJadwalCard(jadwal)),
+                          ],
+                        );
+                        final pengumumanSection = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildModernSectionHeader('📢 Pengumuman Terbaru'),
+                            if (_pengumuman.isEmpty)
+                              _buildEmptyStateCard('Tidak ada pengumuman', Icons.campaign_outlined)
+                            else
+                              ..._pengumuman.map((peng) => _buildModernPengumumanCard(peng)),
+                          ],
+                        );
+                        final nilaiSection = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildModernSectionHeader('📊 Nilai Terbaru'),
+                            if (_nilaiTerbaru.isEmpty)
+                              _buildEmptyStateCard('Belum ada nilai', Icons.analytics_outlined)
+                            else
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: primaryGreen.withOpacity(0.2)),
+                                  boxShadow: [BoxShadow(color: primaryGreen.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 4))],
+                                ),
+                                child: Column(children: _nilaiTerbaru.map((nilai) => _buildModernNilaiRow(nilai)).toList()),
+                              ),
+                          ],
+                        );
+                        final sppSection = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildModernSectionHeader('💰 Informasi SPP'),
+                            _buildModernSPPCard(),
+                          ],
+                        );
+
+                        if (constraints.maxWidth >= 820) {
+                          return Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: jadwalSection),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: pengumumanSection),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: nilaiSection),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: sppSection),
+                                ],
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            jadwalSection,
+                            const SizedBox(height: 24),
+                            pengumumanSection,
+                            const SizedBox(height: 24),
+                            nilaiSection,
+                            const SizedBox(height: 24),
+                            sppSection,
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 48),
                   ],
                 ),
               ),
@@ -441,7 +498,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             ),
           ),
           child: SafeArea(
-            child: Padding(
+            child: ResponsiveCenter(
+              maxWidth: 1080,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [

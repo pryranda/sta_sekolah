@@ -8,6 +8,7 @@ import 'teacher_absensi_screen.dart';
 import 'teacher_input_nilai_screen.dart';
 import 'teacher_tugas_screen.dart';
 import 'teacher_self_absensi_screen.dart';
+import '../../widgets/responsive_layout.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -156,7 +157,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               ),
                             ),
                             child: SafeArea(
-                              child: Padding(
+                              child: ResponsiveCenter(
+                                maxWidth: 1080,
                                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                                 child: Column(
                                   children: [
@@ -165,7 +167,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, 
+                                            horizontal: 12,
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
@@ -190,6 +192,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                         ),
                                         IconButton(
                                           icon: const Icon(Icons.logout, color: Color(0xFF1A2B1C), size: 20),
+                                          tooltip: 'Logout',
                                           onPressed: _logout,
                                         ),
                                       ],
@@ -249,7 +252,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
                       // Content
                       SliverToBoxAdapter(
-                        child: Padding(
+                        child: ResponsiveCenter(
+                          maxWidth: 1080,
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,13 +274,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               const SizedBox(height: 12),
 
                               // Grid Menu
-                              GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                                childAspectRatio: 1.2,
+                              ResponsiveMenuGrid(
+                                mobileColumns: 2,
+                                tabletColumns: 3,
+                                desktopColumns: 5,
+                                mobileAspectRatio: 1.2,
+                                tabletAspectRatio: 1.25,
+                                desktopAspectRatio: 1.15,
                                 children: [
                                   _buildMenuCard(
                                     'Jadwal Mengajar',
@@ -303,7 +307,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                     },
                                   ),
                                   _buildMenuCard(
-                                    'Absensi Saya',  // ← MENU BARU 1
+                                    'Absensi Saya',
                                     Icons.fingerprint,
                                     Colors.red,
                                     0,
@@ -338,14 +342,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                       );
                                     },
                                   ),
-                                  // Menu kosong untuk mengisi grid (opsional)
-                                  Container(),  // ← Kosongkan agar grid tetap rapi
                                 ],
-                            ),
+                              ),
 
-
-
-                              const SizedBox(height: 100),
+                              const SizedBox(height: 48),
                             ],
                           ),
                         ),

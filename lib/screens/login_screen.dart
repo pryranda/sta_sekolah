@@ -10,6 +10,7 @@ import 'admin/admin_dashboard_screen.dart';
 import 'superadmin/superadmin_dashboard_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/school_provider.dart';
+import '../widgets/responsive_layout.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -220,439 +221,463 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
 
-              Align(
-                alignment: Alignment.topCenter,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 40, left: 24, right: 24, bottom: 24),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // ==========================================
-                          // LOGO & NAMA SEKOLAH (HANYA PLACEHOLDER)
-                          // ==========================================
-                          Consumer<SchoolProvider>(
-                            builder: (context, schoolProvider, child) {
-                              final isLoading = schoolProvider.isLoading;
-                              final logo = schoolProvider.logoUrl;
-                              final nama = schoolProvider.namaSekolah;
-
-                              return Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: primaryGreen, width: 2),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: darkerGreen.withOpacity(0.12),
-                                          blurRadius: 15,
-                                          spreadRadius: 2,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: isLoading
-                                        ? const SizedBox(
-                                            width: 50,
-                                            height: 50,
-                                            child: CircularProgressIndicator(
-                                              color: primaryGreen,
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : (logo.isNotEmpty
-                                            ? ClipOval(
-                                                child: Image.network(
-                                                  logo,
-                                                  width: 50,
-                                                  height: 50,
-                                                  fit: BoxFit.cover,
-                                                  loadingBuilder: (context, child, loadingProgress) {
-                                                    if (loadingProgress == null) return child;
-                                                    return const SizedBox(
-                                                      width: 50,
-                                                      height: 50,
-                                                      child: Center(
-                                                        child: CircularProgressIndicator(
-                                                          color: primaryGreen,
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  errorBuilder: (context, error, stackTrace) =>
-                                                      const Icon(
-                                                    Icons.school_rounded,
-                                                    size: 50,
-                                                    color: primaryGreen,
-                                                  ),
-                                                ),
-                                              )
-                                            : const Icon(
-                                                Icons.school_rounded,
-                                                size: 50,
-                                                color: primaryGreen,
-                                              )),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    nama.isNotEmpty ? nama : 'Sekolah', // placeholder
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      color: darkerGreen,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: darkGreen,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Text(
-                                      'Sistem Informasi Sekolah',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white,
-                                        letterSpacing: 1.2,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 28),
-
-                          // Login Card (sama seperti sebelumnya, tidak diubah)
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: primaryGreen.withOpacity(0.2), width: 1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: darkerGreen.withOpacity(0.08),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Form(
-                              key: _formKey,
+              LayoutBuilder(
+                builder: (context, viewportConstraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: (viewportConstraints.maxHeight - 56).clamp(0, double.infinity),
+                      ),
+                      child: Center(
+                        child: ResponsiveCenter(
+                          maxWidth: 430,
+                          child: FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: SlideTransition(
+                              position: _slideAnimation,
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 3,
-                                        height: 28,
-                                        decoration: BoxDecoration(
-                                          color: primaryGreen,
-                                          borderRadius: BorderRadius.circular(2),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                  // ==========================================
+                                  // LOGO & NAMA SEKOLAH
+                                  // ==========================================
+                                  Consumer<SchoolProvider>(
+                                    builder: (context, schoolProvider, child) {
+                                      final isLoading = schoolProvider.isLoading;
+                                      final logo = schoolProvider.logoUrl;
+                                      final nama = schoolProvider.namaSekolah;
+
+                                      return Column(
                                         children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(14),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(color: primaryGreen, width: 2),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: darkerGreen.withOpacity(0.12),
+                                                  blurRadius: 18,
+                                                  spreadRadius: 2,
+                                                  offset: const Offset(0, 6),
+                                                ),
+                                              ],
+                                            ),
+                                            child: isLoading
+                                                ? const SizedBox(
+                                                    width: 52,
+                                                    height: 52,
+                                                    child: CircularProgressIndicator(
+                                                      color: primaryGreen,
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : (logo.isNotEmpty
+                                                    ? ClipOval(
+                                                        child: Image.network(
+                                                          logo,
+                                                          width: 52,
+                                                          height: 52,
+                                                          fit: BoxFit.cover,
+                                                          loadingBuilder: (context, child, loadingProgress) {
+                                                            if (loadingProgress == null) return child;
+                                                            return const SizedBox(
+                                                              width: 52,
+                                                              height: 52,
+                                                              child: Center(
+                                                                child: CircularProgressIndicator(
+                                                                  color: primaryGreen,
+                                                                  strokeWidth: 2,
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                          errorBuilder: (context, error, stackTrace) =>
+                                                              const Icon(
+                                                            Icons.school_rounded,
+                                                            size: 52,
+                                                            color: primaryGreen,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : const Icon(
+                                                        Icons.school_rounded,
+                                                        size: 52,
+                                                        color: primaryGreen,
+                                                      )),
+                                          ),
+                                          const SizedBox(height: 14),
                                           Text(
-                                            'Selamat Datang',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
+                                            nama.isNotEmpty ? nama : 'Sekolah',
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w800,
                                               color: darkerGreen,
+                                              letterSpacing: 0.6,
                                             ),
                                           ),
-                                          Text(
-                                            'Silakan login untuk melanjutkan',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.grey,
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                                            decoration: BoxDecoration(
+                                              color: darkGreen,
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: const Text(
+                                              'Sistem Informasi Sekolah',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.white,
+                                                letterSpacing: 0.8,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ),
                                         ],
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  TextFormField(
-                                    controller: _usernameController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Username',
-                                      labelStyle: const TextStyle(fontSize: 13),
-                                      prefixIcon: Container(
-                                        margin: const EdgeInsets.all(6),
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: primaryGreen.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(
-                                          Icons.person_outline,
-                                          color: primaryGreen,
-                                          size: 18,
-                                        ),
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey[300]!),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey[300]!),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: primaryGreen, width: 1.5),
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                      filled: true,
-                                      fillColor: softWhite,
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Username tidak boleh kosong';
-                                      }
-                                      return null;
+                                      );
                                     },
                                   ),
-                                  const SizedBox(height: 14),
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    obscureText: _obscureText,
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      labelStyle: const TextStyle(fontSize: 13),
-                                      prefixIcon: Container(
-                                        margin: const EdgeInsets.all(6),
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: primaryGreen.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(height: 28),
+
+                                  // Login Card
+                                  Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(22),
+                                      border: Border.all(color: primaryGreen.withOpacity(0.22), width: 1),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: darkerGreen.withOpacity(0.10),
+                                          blurRadius: 28,
+                                          spreadRadius: 2,
+                                          offset: const Offset(0, 10),
                                         ),
-                                        child: const Icon(
-                                          Icons.lock_outline,
-                                          color: primaryGreen,
-                                          size: 18,
-                                        ),
-                                      ),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                          color: Colors.grey[600],
-                                          size: 18,
-                                        ),
-                                        onPressed: () {
-                                          setState(() => _obscureText = !_obscureText);
-                                        },
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey[300]!),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey[300]!),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: primaryGreen, width: 1.5),
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                      filled: true,
-                                      fillColor: softWhite,
+                                      ],
                                     ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Password tidak boleh kosong';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: Checkbox(
-                                          value: _rememberMe,
-                                          onChanged: (value) {
-                                            setState(() => _rememberMe = value ?? false);
-                                          },
-                                          activeColor: primaryGreen,
-                                          checkColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          side: BorderSide(color: Colors.grey[400]!),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Ingat saya',
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      TextButton(
-                                        onPressed: () {},
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: const Size(0, 0),
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: const Text(
-                                          'Lupa password?',
-                                          style: TextStyle(
-                                            color: darkGreen,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  _isLoading
-                                      ? const SizedBox(
-                                          height: 44,
-                                          child: Center(child: CircularProgressIndicator(color: primaryGreen)),
-                                        )
-                                      : Container(
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [darkGreen, darkerGreen],
-                                              begin: Alignment.centerLeft,
-                                              end: Alignment.centerRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: darkGreen.withOpacity(0.3),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 4),
+                                    child: Form(
+                                      key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                width: 4,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: primaryGreen,
+                                                  borderRadius: BorderRadius.circular(2),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              const Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Selamat Datang',
+                                                    style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: darkerGreen,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Silakan login untuk melanjutkan',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
-                                          child: ElevatedButton(
-                                            onPressed: _login,
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.transparent,
-                                              shadowColor: Colors.transparent,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
+                                          const SizedBox(height: 22),
+                                          TextFormField(
+                                            controller: _usernameController,
+                                            textInputAction: TextInputAction.next,
+                                            decoration: InputDecoration(
+                                              labelText: 'Username / NIS',
+                                              labelStyle: const TextStyle(fontSize: 13),
+                                              prefixIcon: Container(
+                                                margin: const EdgeInsets.all(6),
+                                                padding: const EdgeInsets.all(6),
+                                                decoration: BoxDecoration(
+                                                  color: primaryGreen.withOpacity(0.12),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.person_outline,
+                                                  color: primaryGreen,
+                                                  size: 18,
+                                                ),
                                               ),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                                              filled: true,
+                                              fillColor: softWhite,
+                                            ),
+                                            validator: (value) {
+                                              if (value == null || value.trim().isEmpty) {
+                                                return 'Username tidak boleh kosong';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 14),
+                                          TextFormField(
+                                            controller: _passwordController,
+                                            obscureText: _obscureText,
+                                            textInputAction: TextInputAction.done,
+                                            onFieldSubmitted: (_) => _isLoading ? null : _login(),
+                                            decoration: InputDecoration(
+                                              labelText: 'Password',
+                                              labelStyle: const TextStyle(fontSize: 13),
+                                              prefixIcon: Container(
+                                                margin: const EdgeInsets.all(6),
+                                                padding: const EdgeInsets.all(6),
+                                                decoration: BoxDecoration(
+                                                  color: primaryGreen.withOpacity(0.12),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.lock_outline,
+                                                  color: primaryGreen,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                                  color: Colors.grey[600],
+                                                  size: 18,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() => _obscureText = !_obscureText);
+                                                },
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                                              filled: true,
+                                              fillColor: softWhite,
+                                            ),
+                                            validator: (value) {
+                                              if (value == null || value.isEmpty) {
+                                                return 'Password tidak boleh kosong';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              InkWell(
+                                                borderRadius: BorderRadius.circular(6),
+                                                onTap: () => setState(() => _rememberMe = !_rememberMe),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      SizedBox(
+                                                        width: 18,
+                                                        height: 18,
+                                                        child: Checkbox(
+                                                          value: _rememberMe,
+                                                          onChanged: (value) {
+                                                            setState(() => _rememberMe = value ?? false);
+                                                          },
+                                                          activeColor: primaryGreen,
+                                                          checkColor: Colors.white,
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(4),
+                                                          ),
+                                                          side: BorderSide(color: Colors.grey[400]!),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        'Ingat saya',
+                                                        style: TextStyle(
+                                                          color: Colors.grey[700],
+                                                          fontSize: 12.5,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              const Spacer(),
+                                              TextButton(
+                                                onPressed: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (ctx) => AlertDialog(
+                                                      title: const Text('Lupa Password?'),
+                                                      content: const Text(
+                                                        'Silakan hubungi admin sekolah atau bagian tata usaha untuk mereset password akun Anda.',
+                                                      ),
+                                                      actions: [
+                                                        ElevatedButton(
+                                                          onPressed: () => Navigator.pop(ctx),
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor: darkGreen,
+                                                            foregroundColor: Colors.white,
+                                                          ),
+                                                          child: const Text('Mengerti'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                                  minimumSize: const Size(0, 0),
+                                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                ),
+                                                child: const Text(
+                                                  'Lupa password?',
+                                                  style: TextStyle(
+                                                    color: darkGreen,
+                                                    fontSize: 12.5,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 18),
+                                          _isLoading
+                                              ? const SizedBox(
+                                                  height: 46,
+                                                  child: Center(child: CircularProgressIndicator(color: primaryGreen)),
+                                                )
+                                              : Container(
+                                                  height: 46,
+                                                  decoration: BoxDecoration(
+                                                    gradient: const LinearGradient(
+                                                      colors: [darkGreen, darkerGreen],
+                                                      begin: Alignment.centerLeft,
+                                                      end: Alignment.centerRight,
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: darkGreen.withOpacity(0.28),
+                                                        blurRadius: 12,
+                                                        offset: const Offset(0, 4),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: ElevatedButton(
+                                                    onPressed: _login,
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.transparent,
+                                                      shadowColor: Colors.transparent,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        const Text(
+                                                          'Masuk',
+                                                          style: TextStyle(
+                                                            fontSize: 15,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.white,
+                                                            letterSpacing: 0.6,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Container(
+                                                          padding: const EdgeInsets.all(4),
+                                                          decoration: const BoxDecoration(
+                                                            color: primaryGreen,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.arrow_forward,
+                                                            color: Colors.white,
+                                                            size: 13,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                          const SizedBox(height: 16),
+                                          Row(
+                                            children: [
+                                              Expanded(child: Divider(color: Colors.grey[300], thickness: 0.8)),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                                child: Text(
+                                                  'atau',
+                                                  style: TextStyle(color: Colors.grey, fontSize: 11.5),
+                                                ),
+                                              ),
+                                              Expanded(child: Divider(color: Colors.grey[300], thickness: 0.8)),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 14),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                            decoration: BoxDecoration(
+                                              color: primaryGreen.withOpacity(0.08),
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(color: primaryGreen.withOpacity(0.2)),
                                             ),
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                const Text(
-                                                  'Masuk',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                    letterSpacing: 0.8,
-                                                  ),
+                                                const Icon(
+                                                  Icons.info_outline,
+                                                  size: 15,
+                                                  color: darkGreen,
                                                 ),
                                                 const SizedBox(width: 6),
-                                                Container(
-                                                  padding: const EdgeInsets.all(4),
-                                                  decoration: BoxDecoration(
-                                                    color: primaryGreen,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.arrow_forward,
-                                                    color: Colors.white,
-                                                    size: 12,
+                                                Flexible(
+                                                  child: Text(
+                                                    'Hubungi admin sekolah untuk bantuan akun',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: darkerGreen.withOpacity(0.75),
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ),
-                                  const SizedBox(height: 14),
-                                  Row(
-                                    children: [
-                                      Expanded(child: Divider(color: Colors.grey[300], thickness: 0.8)),
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 10),
-                                        child: Text(
-                                          'atau',
-                                          style: TextStyle(color: Colors.grey, fontSize: 11),
-                                        ),
+                                        ],
                                       ),
-                                      Expanded(child: Divider(color: Colors.grey[300], thickness: 0.8)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: primaryGreen.withOpacity(0.08),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: primaryGreen.withOpacity(0.2)),
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.info_outline,
-                                          size: 14,
-                                          color: darkGreen,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Hubungi admin untuk bantuan',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: darkerGreen.withOpacity(0.7),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                                  ),
+
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    '© 2026 STA • v1.0.0',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: darkerGreen.withOpacity(0.55),
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-
-                          const SizedBox(height: 16),
-                          Text(
-                            '© 2026 STA • v1.0.0',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: darkerGreen.withOpacity(0.5),
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),

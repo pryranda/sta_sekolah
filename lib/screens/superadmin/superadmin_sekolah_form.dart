@@ -4,8 +4,11 @@
 // Saat mendaftarkan sekolah baru, akun Admin Sekolah pertamanya dibuat
 // sekaligus — tanpa itu sekolah baru tidak bisa dipakai siapa pun.
 
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../widgets/responsive_layout.dart';
+import '../../widgets/school_logo_picker.dart';
 
 class SuperadminSekolahForm extends StatefulWidget {
   /// null = tambah sekolah baru, selain itu = ubah sekolah.
@@ -28,9 +31,15 @@ class _SuperadminSekolahFormState extends State<SuperadminSekolahForm> {
   late final TextEditingController _telepon;
   late final TextEditingController _email;
   late final TextEditingController _website;
+  late final TextEditingController _logoUrl;
+  late final TextEditingController _jamMasuk;
+  late final TextEditingController _jamPulang;
   late final TextEditingController _latitude;
   late final TextEditingController _longitude;
   late final TextEditingController _radius;
+
+  Uint8List? _pickedLogoBytes;
+  String? _pickedLogoName;
 
   final _adminUsername = TextEditingController();
   final _adminPassword = TextEditingController();
@@ -48,15 +57,49 @@ class _SuperadminSekolahFormState extends State<SuperadminSekolahForm> {
     _telepon = TextEditingController(text: s?['telepon']?.toString() ?? '');
     _email = TextEditingController(text: s?['email']?.toString() ?? '');
     _website = TextEditingController(text: s?['website']?.toString() ?? '');
+    _logoUrl = TextEditingController(text: s?['logo_url']?.toString() ?? '');
+    _jamMasuk = TextEditingController(text: _normalizeTime(s?['jam_masuk'], '07:00:00'));
+    _jamPulang = TextEditingController(text: _normalizeTime(s?['jam_pulang'], '13:30:00'));
     _latitude = TextEditingController(text: s?['latitude']?.toString() ?? '');
     _longitude = TextEditingController(text: s?['longitude']?.toString() ?? '');
     _radius = TextEditingController(text: s?['radius_maksimal']?.toString() ?? '150');
   }
 
+  String _normalizeTime(dynamic value, String fallback) {
+    final v = value?.toString().trim() ?? '';
+    if (v.isEmpty) return fallback;
+    if (v.length == 5) return '$v:00';
+    return v;
+  }
+
+  String _displayTime(String value) => value.length >= 5 ? value.substring(0, 5) : value;
+
+  Future<void> _pickTime(TextEditingController controller, String label) async {
+    final parts = controller.text.split(':');
+    final initialHour = int.tryParse(parts.isNotEmpty ? parts[0] : '') ?? 7;
+    final initialMinute = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+
+    final picked = await showTimePicker(
+      context: context,
+      helpText: label,
+      initialTime: TimeOfDay(
+        hour: initialHour.clamp(0, 23),
+        minute: initialMinute.clamp(0, 59),
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00';
+      });
+    }
+  }
+
   @override
   void dispose() {
     for (final c in [
-      _nama, _alamat, _telepon, _email, _website, _latitude, _longitude, _radius,
+      _nama, _alamat, _telepon, _email, _website, _logoUrl,
+      _jamMasuk, _jamPulang, _latitude, _longitude, _radius,
       _adminUsername, _adminPassword, _adminNama,
     ]) {
       c.dispose();
@@ -69,12 +112,40 @@ class _SuperadminSekolahFormState extends State<SuperadminSekolahForm> {
 
     setState(() => _isSaving = true);
 
+    String logoUrl = _logoUrl.text.trim();
+    if (_pickedLogoBytes != null) {
+      final uploadResult = await ApiService.uploadLogoSekolah(
+        _pickedLogoBytes!,
+        _pickedLogoName ?? 'logo.png',
+      );
+      if (uploadResult['success'] == true && uploadResult['data'] != null) {
+        logoUrl = (uploadResult['data']['url'] ?? '').toString();
+        _logoUrl.text = logoUrl;
+        _pickedLogoBytes = null;
+        _pickedLogoName = null;
+      } else {
+        if (!mounted) return;
+        setState(() => _isSaving = false);
+        final statusCode = uploadResult['statusCode'];
+        final msg = statusCode == 404
+            ? 'Endpoint upload logo belum aktif di server API. Hapus file terpilih dan isi URL Logo secara manual, atau deploy ulang backend.'
+            : (uploadResult['message']?.toString() ?? 'Gagal mengunggah logo');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
+        );
+        return;
+      }
+    }
+
     final data = <String, dynamic>{
       'nama': _nama.text.trim(),
       'alamat': _alamat.text.trim(),
       'telepon': _telepon.text.trim(),
       'email': _email.text.trim(),
       'website': _website.text.trim(),
+      'logo_url': logoUrl,
+      'jam_masuk': _normalizeTime(_jamMasuk.text, '07:00:00'),
+      'jam_pulang': _normalizeTime(_jamPulang.text, '13:30:00'),
       'latitude': double.tryParse(_latitude.text.trim()) ?? 0,
       'longitude': double.tryParse(_longitude.text.trim()) ?? 0,
       'radius_maksimal': int.tryParse(_radius.text.trim()) ?? 150,
@@ -118,35 +189,102 @@ class _SuperadminSekolahFormState extends State<SuperadminSekolahForm> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          children: [
-            _seksi('Identitas Sekolah'),
-            _field(_nama, 'Nama sekolah *', Icons.apartment, wajib: true),
-            _field(_alamat, 'Alamat', Icons.place, baris: 2),
-            _field(_telepon, 'Telepon', Icons.phone, tipe: TextInputType.phone),
-            _field(_email, 'Email', Icons.mail, tipe: TextInputType.emailAddress),
-            _field(_website, 'Website', Icons.language),
-
-            const SizedBox(height: 18),
-            _seksi('Lokasi Absensi'),
-            Text(
-              'Dipakai untuk memvalidasi jarak saat siswa melakukan check-in. '
-              'Kosongkan radius dengan 0 bila tidak ingin dibatasi.',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 10),
-            Row(
+          child: ResponsiveCenter(
+            maxWidth: 860,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _field(_latitude, 'Latitude', Icons.my_location,
-                    tipe: const TextInputType.numberWithOptions(decimal: true, signed: true))),
-                const SizedBox(width: 10),
-                Expanded(child: _field(_longitude, 'Longitude', Icons.my_location,
-                    tipe: const TextInputType.numberWithOptions(decimal: true, signed: true))),
-              ],
-            ),
-            _field(_radius, 'Radius maksimal (meter)', Icons.adjust,
-                tipe: TextInputType.number),
+                _seksi('Logo Sekolah'),
+                SchoolLogoPicker(
+                  logoUrlController: _logoUrl,
+                  pickedBytes: _pickedLogoBytes,
+                  pickedFileName: _pickedLogoName,
+                  accentColor: primary,
+                  onPicked: (bytes, name) => setState(() {
+                    _pickedLogoBytes = bytes;
+                    _pickedLogoName = name;
+                  }),
+                  onClear: () => setState(() {
+                    _pickedLogoBytes = null;
+                    _pickedLogoName = null;
+                    _logoUrl.clear();
+                  }),
+                  onUrlChanged: () => setState(() {}),
+                ),
+
+                const SizedBox(height: 18),
+                _seksi('Identitas Sekolah'),
+                _field(_nama, 'Nama sekolah *', Icons.apartment, wajib: true),
+                _field(_alamat, 'Alamat', Icons.place, baris: 2),
+                _field(_telepon, 'Telepon', Icons.phone, tipe: TextInputType.phone),
+                _field(_email, 'Email', Icons.mail, tipe: TextInputType.emailAddress),
+                _field(_website, 'Website', Icons.language),
+
+                const SizedBox(height: 18),
+                _seksi('Jam Operasional'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _pickTime(_jamMasuk, 'Jam Masuk'),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Jam Masuk',
+                            prefixIcon: Icon(Icons.login),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          child: Text(
+                            _displayTime(_jamMasuk.text),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _pickTime(_jamPulang, 'Jam Pulang'),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Jam Pulang',
+                            prefixIcon: Icon(Icons.logout),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          child: Text(
+                            _displayTime(_jamPulang.text),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+                _seksi('Lokasi Absensi'),
+                Text(
+                  'Dipakai untuk memvalidasi jarak saat siswa melakukan check-in. '
+                  'Kosongkan radius dengan 0 bila tidak ingin dibatasi.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: _field(_latitude, 'Latitude', Icons.my_location,
+                        tipe: const TextInputType.numberWithOptions(decimal: true, signed: true))),
+                    const SizedBox(width: 10),
+                    Expanded(child: _field(_longitude, 'Longitude', Icons.my_location,
+                        tipe: const TextInputType.numberWithOptions(decimal: true, signed: true))),
+                  ],
+                ),
+                _field(_radius, 'Radius maksimal (meter)', Icons.adjust,
+                    tipe: TextInputType.number),
 
             if (!_isEdit) ...[
               const SizedBox(height: 18),
@@ -225,7 +363,9 @@ class _SuperadminSekolahFormState extends State<SuperadminSekolahForm> {
               ),
             ),
             const SizedBox(height: 30),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
