@@ -4,7 +4,7 @@ Backend untuk aplikasi Flutter `sta_sekolah`. Dibangun dengan Node.js + Express 
 dan dirancang mengikuti bentuk response yang sudah diharapkan oleh aplikasi
 (`{ "success": bool, "message": string, "data": … }`).
 
-Server aktif: **http://192.168.25.61:5001/api**
+Server aktif: **http://10.0.0.39:5001/api**
 
 ---
 
@@ -70,7 +70,7 @@ disimpan terpisah di `/etc/sta-api.env` (mode 600) supaya tidak masuk repositori
 | Variabel | Default | Keterangan |
 |---|---|---|
 | `PORT` | `5001` | Port HTTP |
-| `BASE_URL` | `http://192.168.25.61:5001` | Dipakai untuk menyusun URL file yang diunggah |
+| `BASE_URL` | `http://10.0.0.39:5001` | Dipakai untuk menyusun URL file yang diunggah |
 | `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | MySQL |
 | `DB_NAME` / `DB_USER` | `sta_sekolah` / `sta_app` | MySQL |
 | `DB_PASSWORD` | — | Wajib, dari `/etc/sta-api.env` |

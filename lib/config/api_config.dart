@@ -9,7 +9,7 @@
 library;
 
 /// Host + port backend, tanpa `/api` dan tanpa garis miring di akhir.
-const String kApiHost = 'http://192.168.25.61:5001';
+const String kApiHost = 'http://10.0.0.39:5001';
 
 /// Base URL seluruh endpoint REST.
 const String kApiBaseUrl = '$kApiHost/api';

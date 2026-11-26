@@ -3,7 +3,7 @@
 // Semua konfigurasi diambil dari environment (lihat deploy/sta-api.service).
 module.exports = {
   port: parseInt(process.env.PORT || '5001', 10),
-  baseUrl: process.env.BASE_URL || 'http://192.168.25.61:5001',
+  baseUrl: process.env.BASE_URL || 'http://10.0.0.39:5001',
 
   db: {
     host: process.env.DB_HOST || '127.0.0.1',

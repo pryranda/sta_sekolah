@@ -15,7 +15,7 @@ Group=root
 
 Environment=NODE_ENV=production
 Environment=PORT=5001
-Environment=BASE_URL=http://192.168.25.61:5001
+Environment=BASE_URL=http://10.0.0.39:5001
 Environment=DB_HOST=127.0.0.1
 Environment=DB_PORT=3306
 Environment=DB_NAME=sta_sekolah
