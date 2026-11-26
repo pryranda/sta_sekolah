@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
@@ -863,15 +864,64 @@ class ApiService {
   // ==========================================
   // SEKOLAH
   // ==========================================
-  
-  static Future<Map<String, dynamic>> getSekolahInfo() async {
+
+  static Future<Map<String, dynamic>> getSekolahInfo({String? sekolahId}) async {
     try {
+      final query = (sekolahId != null && sekolahId.isNotEmpty)
+          ? '?sekolah_id=${Uri.encodeComponent(sekolahId)}'
+          : '';
       final response = await http.get(
-        Uri.parse('$baseUrl/sekolah/info'),
-      );
+        Uri.parse('$baseUrl/sekolah/info$query'),
+      ).timeout(const Duration(seconds: 15));
       return jsonDecode(response.body);
     } catch (e) {
       return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateSekolahInfo(Map<String, dynamic> infoData) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl/sekolah/info'),
+        headers: headers,
+        body: jsonEncode(infoData),
+      ).timeout(const Duration(seconds: 20));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> uploadLogoSekolah(
+    Uint8List bytes,
+    String filename,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/sekolah/upload-logo'),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(
+        http.MultipartFile.fromBytes('logo', bytes, filename: filename),
+      );
+
+      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      final body = await streamed.stream.bytesToString();
+      if (body.trim().startsWith('{')) {
+        return jsonDecode(body);
+      }
+      return {
+        'success': false,
+        'statusCode': streamed.statusCode,
+        'message': 'Server mengembalikan status ${streamed.statusCode}',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Error upload logo: $e'};
     }
   }
 
@@ -882,7 +932,7 @@ class ApiService {
         Uri.parse('$baseUrl/sekolah/lokasi'),
         headers: headers,
         body: jsonEncode(lokasiData),
-      );
+      ).timeout(const Duration(seconds: 20));
       return jsonDecode(response.body);
     } catch (e) {
       return {'success': false, 'message': 'Error: $e'};

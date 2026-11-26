@@ -31,6 +31,9 @@ function makeUploader(subdir, allowed) {
 
 const uploadTugas = makeUploader('tugas', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'zip', 'rar', 'txt']);
 const uploadBukti = makeUploader('bukti', ['jpg', 'jpeg', 'png', 'pdf', 'webp', 'heic']);
-const uploadLogo = makeUploader('logo', ['jpg', 'jpeg', 'png', 'svg', 'webp']);
+// SVG sengaja tidak diizinkan: bisa memuat <script> dan dilayani apa adanya
+// dari /uploads, sementara aplikasi merender logo dengan Image.network yang
+// tidak bisa membaca SVG.
+const uploadLogo = makeUploader('logo', ['jpg', 'jpeg', 'png', 'webp']);
 
 module.exports = { makeUploader, uploadTugas, uploadBukti, uploadLogo };

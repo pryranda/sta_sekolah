@@ -3,9 +3,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 
+const config = require('../config');
 const { query, queryOne, withTransaction } = require('../db');
 const { ok, fail, asyncHandler, uuid, toNum } = require('../utils/helpers');
 const { authenticate, requireRole } = require('../middleware/auth');
+const { uploadLogo } = require('../middleware/upload');
 const { requireScoped } = require('../utils/tenant');
 
 const router = express.Router();
@@ -109,6 +111,28 @@ router.put('/info', authenticate, requireRole('admin', 'superadmin'),
 
     const updated = await queryOne(`SELECT * FROM sekolah WHERE id = ?`, [sekolahId]);
     return ok(res, mapSekolah(updated), 'Profil sekolah berhasil diperbarui');
+  })
+);
+
+// ====================================================================
+// POST /api/sekolah/upload-logo   (multipart field: logo / file)
+// ====================================================================
+router.post('/upload-logo',
+  authenticate,
+  requireRole('admin', 'superadmin'),
+  uploadLogo.fields([{ name: 'logo', maxCount: 1 }, { name: 'file', maxCount: 1 }]),
+  asyncHandler(async (req, res) => {
+    const f = (req.files?.logo?.[0]) || (req.files?.file?.[0]);
+    if (!f) return fail(res, 'File logo tidak ditemukan pada request', 400);
+
+    const url = `${config.baseUrl}/uploads/logo/${f.filename}`;
+    return ok(res, {
+      url,
+      path: `/uploads/logo/${f.filename}`,
+      filename: f.filename,
+      original_name: f.originalname,
+      size: f.size,
+    }, 'Logo sekolah berhasil diunggah');
   })
 );
 
